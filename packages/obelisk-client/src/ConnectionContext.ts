@@ -16,7 +16,7 @@ export const ConnectionService = new class {
     this.user = {
       x: null,
       y: null,
-      player: null,
+      player: 5,
     };
 
     this.socket.on('obelisk', this.onObeliskEvent);
