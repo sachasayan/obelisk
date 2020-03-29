@@ -5,9 +5,7 @@ import { ConnectionContext, ConnectionService } from './ConnectionContext';
 
 function UserInfo() {
   let socket = useContext(ConnectionContext);
-  return socket.user.player ? (
-      <p>Hello. You are connected as {socket.user.player}</p>
-    ) : (<p>Connecting...</p> );
+  return ( <p>Hello. You are connected as {socket.user.player}</p> ) ;
 }
 
 function ModeSelector() {
@@ -20,7 +18,8 @@ function ModeSelector() {
     'Pulse',
     'Space',
     'Sunlight',
-    'Test   ',
+    'Test',
+    'exit',
   ];
 
   return (
@@ -34,21 +33,16 @@ function ModeSelector() {
           </>
       ))}
     </div>
-
-
   )
-
- }
+}
 
 function App() {
-
     return (
       <ConnectionContext.Provider value={ConnectionService}>
       <div className="App">
         <header className="App-header">
           <UserInfo />
           <ModeSelector />
-
           <canvas className="whiteboard" ></canvas>
         </header>
       </div>
@@ -138,7 +132,5 @@ function CanvasController () {
 
 
 }
-
-
 
 export default App;

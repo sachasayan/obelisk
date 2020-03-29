@@ -23,8 +23,6 @@ export const ConnectionService = new class {
   init(){
     this.socket.on('obelisk', this.onObeliskEvent);
     this.socket.on('obeliskAssignUser', this.onAssignUser);
-
-
   }
 
   // Send out requests
@@ -39,7 +37,8 @@ export const ConnectionService = new class {
   }
 
   onAssignUser(data: any){
-    this.user.player = data
+    console.log('Assigning user..', data);
+    this.user.player = data;
   }
 
 };
