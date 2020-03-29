@@ -1,11 +1,8 @@
-//LED Matrix
+// LED Matrix
 import { LedMatrix } from 'rpi-led-matrix';
 import { Billboard, Lightcycles, Munchman, Pong, Pulse, Space, Sunlight, Test } from './modes';
 
-// CLI
-import * as prompts from 'prompts';
-
-//Config
+// Config
 import { config, matrixOptions, runtimeOptions } from './config';
 import { CliMode } from './types';
 
@@ -35,6 +32,7 @@ if (config.runServer){
   let onConnection = (socket) => {
     players = [socket];
     socket.emit('obeliskAssignUser', players.length);
+    socket.on('changeMode', (data) => { changeMode(data); });
     socket.on('drawing', (data) => {
       playerData[0] = {y: data.y};
     });
@@ -44,90 +42,39 @@ if (config.runServer){
     });
   };
   server.io.on('connection', onConnection);
-  server.app.use(express.static(__dirname + '/public'));
+  console.log(__dirname + '/../obelisk-client/build');
+  server.app.use(express.static('../obelisk-client/build'));
   server.http.listen(server.port, () => console.log('Server started. Listening on :' + server.port));
 }
 
+
+let changeMode = (mode: string) => {
+  let modes = {
+    'Billboard': Billboard,
+    'Lightcycles': Lightcycles,
+    'Munchman': Munchman,
+    'Pong': Pong,
+    'Pulse': Pulse,
+    'Space': Space,
+    'Sunlight': Sunlight,
+    'Test': Test
+  }
+  if (config.initPanel && matrix) {
+    if (mode = 'exit'){
+      matrix.afterSync(() => {});
+      matrix.clear().sync();
+      process.exit(0);
+    }
+    matrix.afterSync(() => {});
+    modes[mode].init();
+  }
+}
+
 if (config.initPanel) {
-
-  const createModeSelector = () => {
-    return async () => {
-      const { mode } = await prompts({
-        name: 'mode',
-        type: 'select',
-        message: 'What would you like to do?',
-        hint: 'Use tab or arrow keys and press enter to select.',
-        choices: [
-          { value: CliMode.Billboard, title:'🔤 => Billboard' },
-          { value: CliMode.Pong, title:'🎾 => Pong' },
-          { value: CliMode.Lightcycles, title:'🏍\s => Lightcycles' },
-          { value: CliMode.Munchman, title:  '🟡 => Munchman' },
-          { value: CliMode.Space, title: '🚀 => Space Adventure' },
-          { value: CliMode.Pulse, title:'🕺 => Twinkle' },
-          { value: CliMode.Exit, title: '🚪 => Exit' },
-          { value: CliMode.Sunlight, title: '🟠 => Sunlight' },
-          { value: CliMode.Test, title:  '(Test Mode)' },
-        ],
-      });
-      return mode as CliMode;
-    };
-  };
-  const chooseMode = createModeSelector();
-
   (async () => {
     try {
-      const matrix = new LedMatrix(matrixOptions, runtimeOptions);
+      matrix = new LedMatrix(matrixOptions, runtimeOptions);
       matrix.clear();
-
-      while (true) {
-        switch (await chooseMode()) {
-          case CliMode.Billboard: {
-            matrix.afterSync(() => {});
-            Billboard.init(matrix);
-            break;
-          }
-          case CliMode.Test: {
-            matrix.afterSync(() => {});
-            Test.init(matrix);
-            break;
-          }
-          case CliMode.Munchman: {
-            matrix.afterSync(() => {});
-            Munchman.init(matrix);
-            break;
-          }
-          case CliMode.Space: {
-            matrix.afterSync(() => {});
-            Space.init(matrix);
-            break;
-          }
-          case CliMode.Sunlight: {
-            matrix.afterSync(() => {});
-            Sunlight.init(matrix);
-            break;
-          }
-          case CliMode.Pulse: {
-            matrix.afterSync(() => {});
-            Pulse.init(matrix);
-            break;
-          }
-          case CliMode.Pong: {
-            matrix.afterSync(() => {});
-            Pong.init(matrix, playerData);
-            break;
-          }
-          case CliMode.Lightcycles: {
-            matrix.afterSync(() => {});
-            Lightcycles.init(matrix);
-            break;
-          }
-          case CliMode.Exit: {
-            matrix.afterSync(() => {});
-            matrix.clear().sync();
-            process.exit(0);
-          }
-        }
-      }
     }
     catch (error) {
       console.error(`${__filename} caught: `, error);

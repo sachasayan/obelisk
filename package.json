@@ -7,5 +7,10 @@
   "private": true,
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "obelisk": "yarn workspace obelisk-server run obelisk",
+    "client build": "yarn workspace obelisk-client run build",
+    "client start": "yarn workspace obelisk-client run build"
+  }
 }
