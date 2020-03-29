@@ -66,7 +66,7 @@ let changeMode = (mode: string) => {
       process.exit(0);
     }
     matrix.afterSync(() => {});
-    modes[mode].init();
+    modes[mode].init(matrix);
   }
 }
 
