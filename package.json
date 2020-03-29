@@ -1,7 +1,11 @@
 {
-  "name": "root",
+  "name": "y",
+  "version": "y",
+  "description": "Obelisk",
+  "main": "y",
+  "license": "MIT",
   "private": true,
-  "devDependencies": {
-    "lerna": "^3.20.2"
-  }
+  "workspaces": [
+    "packages/*"
+  ]
 }

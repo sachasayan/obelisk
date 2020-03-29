@@ -1,0 +1,32 @@
+{
+  "name": "obelisk",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "obelisk": "ts-node index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sachasayan/obelisk.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sachasayan/obelisk/issues"
+  },
+  "homepage": "https://github.com/sachasayan/obelisk#readme",
+  "dependencies": {
+    "@types/node": "^13.7.2",
+    "chroma-js": "^2.1.0",
+    "express": "4.9.x",
+    "jimp": "^0.9.3",
+    "node-dyndns-client": "^0.2.3",
+    "prompts": "^2.3.1",
+    "rpi-led-matrix": "^1.9.0",
+    "socket.io": "latest",
+    "ts-node": "^8.6.2",
+    "typescript": "^3.7.5"
+  }
+}
