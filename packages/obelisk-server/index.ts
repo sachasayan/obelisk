@@ -60,7 +60,7 @@ let changeMode = (mode: string) => {
     'Test': Test
   }
   if (config.initPanel && matrix) {
-    if (mode = 'exit'){
+    if (mode === 'exit'){
       matrix.afterSync(() => {});
       matrix.clear().sync();
       process.exit(0);
