@@ -31,8 +31,13 @@ if (config.runServer){
   }
   let onConnection = (socket) => {
     players = [socket];
+    console.log("Connected to socket, assigning player", players.length);
     socket.emit('obeliskAssignUser', players.length);
-    socket.on('changeMode', (data) => { changeMode(data); });
+
+    socket.on('changeMode', (data) => {
+      config.verbose ? console.log('Recieved request to change mode to', data) : 0;
+      changeMode(data);
+    });
     socket.on('drawing', (data) => {
       playerData[0] = {y: data.y};
     });

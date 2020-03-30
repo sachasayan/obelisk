@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "obelisk": "yarn workspace obelisk-server run obelisk",
-    "client build": "yarn workspace obelisk-client run build",
-    "client start": "yarn workspace obelisk-client run build"
+    "clientbuild": "yarn workspace obelisk-client run build",
+    "clientstart": "yarn workspace obelisk-client run start"
   }
 }

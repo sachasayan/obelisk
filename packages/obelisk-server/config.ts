@@ -1,6 +1,7 @@
 import { GpioMapping, LedMatrix, LedMatrixUtils, MatrixOptions, PixelMapperType, RuntimeOptions } from 'rpi-led-matrix';
 
 let config = {
+  verbose: true,
   runServer: true,
   initPanel: false
 };

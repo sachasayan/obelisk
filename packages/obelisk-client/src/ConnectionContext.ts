@@ -1,24 +1,27 @@
 import io from 'socket.io-client';
-import {createContext}  from 'react';
+import React  from 'react';
 
-interface UserInfo {
+export interface UserInfo {
   x: number | null;
   y: number | null;
   player: number | null;
 };
 
-export const ConnectionService = new class {
+export class ConnectionService {
   user: UserInfo;
 
-  socket = io();
+  socket: any;
 
   constructor (){
     this.user = {
       x: null,
       y: null,
-      player: 5,
+      player: 4,
     };
+  }
 
+  initSocket(){
+    this.socket = io();
     this.socket.on('obelisk', this.onObeliskEvent);
     this.socket.on('obeliskAssignUser', this.onAssignUser);
   }
@@ -41,5 +44,5 @@ export const ConnectionService = new class {
 
 };
 
-export const ConnectionContext = createContext(ConnectionService);
+export const ConnectionContext = React.createContext<ConnectionService | undefined>(undefined);
 
