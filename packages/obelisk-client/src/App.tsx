@@ -11,6 +11,8 @@ import {
 }  from '@material-ui/core';
 import { ConnectionContext, ConnectionState } from './ConnectionContext';
 
+import io from 'socket.io-client';
+
 export interface UserInfo {
   player: number | null;
 };
@@ -25,7 +27,7 @@ function UserInfo() {
 }
 
 function ModeSelector() {
-  let socket: ConnectionState | undefined = useContext(ConnectionContext);
+  let connection: ConnectionState | undefined = useContext(ConnectionContext);
   let modes = [
     'Billboard',
     'Lightcycles',
@@ -38,6 +40,11 @@ function ModeSelector() {
     'exit',
   ];
 
+  const changeMode = (mode: string) => {
+    console.log('Changing mode... ', mode);
+    connection?.socket.emit('changeMode', mode);
+  }
+
   return (
     <div>
         <>
@@ -46,7 +53,7 @@ function ModeSelector() {
               <List >
                 {modes.map((m) => (
                   <ListItem key={m}>
-                    <Button  aria-label="delete"  onClick={() => {socket?.setUser(2)} }>
+                    <Button  aria-label="delete"  onClick={() => {changeMode(m)} }>
                     <Avatar>
                     </Avatar>
                     <ListItemText
@@ -74,6 +81,7 @@ function ConnectProvider({children}: IProps) {
   //connectionService.initSocket();
 
   const setUser = (u: number)  => {
+    console.log('Setting user..', u);
     updateConnection(prevState => {
       return {
         ...prevState,
@@ -82,11 +90,14 @@ function ConnectProvider({children}: IProps) {
     })
   }
 
+
   const connectionState = {
-    socketio: null,
+    socket: io(),
     user: 4,
     setUser: setUser
   };
+
+  //connectionState.socket.on('obeliskAssignUser', setUser);
 
   const [connection, updateConnection] = useState(connectionState)
 

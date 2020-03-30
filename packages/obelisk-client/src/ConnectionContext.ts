@@ -1,11 +1,17 @@
-import io from 'socket.io-client';
+
 import React  from 'react';
 
-export interface UserInfo {
-  x: number | null;
-  y: number | null;
-  player: number | null;
+
+
+export interface ConnectionState {
+  socket: any,
+  user: number,
+  setUser: any
 };
+
+export const ConnectionContext = React.createContext<ConnectionState | undefined>(undefined);
+
+
 
 // export class ConnectionService {
 //   user: UserInfo;
@@ -44,13 +50,4 @@ export interface UserInfo {
 
 // };
 
-
-
-export interface ConnectionState {
-  socketio: any,
-  user: number,
-  setUser: any
-};
-
-export const ConnectionContext = React.createContext<ConnectionState | undefined>(undefined);
 
