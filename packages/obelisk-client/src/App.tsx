@@ -2,13 +2,16 @@ import React, { useContext, useState } from 'react';
 import './App.css';
 import {
   Button,
+  ButtonGroup,
   Grid,
   Typography,
   List,
   ListItem,
   ListItemText,
   Avatar,
+  Paper
 }  from '@material-ui/core';
+import { palette, spacing, typography } from '@material-ui/system';
 import { ConnectionContext, ConnectionState } from './ConnectionContext';
 
 import io from 'socket.io-client';
@@ -46,27 +49,19 @@ function ModeSelector() {
   }
 
   return (
-    <div>
-        <>
-          <Grid item xs={12} md={6}>
-            <div>
-              <List >
-                {modes.map((m) => (
-                  <ListItem key={m}>
-                    <Button  aria-label="delete"  onClick={() => {changeMode(m)} }>
-                    <Avatar>
-                    </Avatar>
-                    <ListItemText
-                      primary={m}
-                    />
-                    </Button>
-                  </ListItem>
-                ))}
-              </List>
-            </div>
-          </Grid>
-        </>
-    </div>
+    <>
+      <Paper elevation={3} style={{padding: '20px'}} >
+        <Grid item >
+          <ButtonGroup  orientation="vertical">
+            {modes.map((m) => (
+              <Button key={m} variant="contained" color="primary" aria-label="delete"  onClick={() => {changeMode(m)} }>
+              {m}
+              </Button>
+            ))}
+          </ButtonGroup>
+        </Grid>
+      </Paper>
+    </>
   )
 }
 
