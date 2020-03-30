@@ -9,23 +9,23 @@ import {
   ListItemText,
   Avatar,
 }  from '@material-ui/core';
-import { ConnectionContext, ConnectionService } from './ConnectionContext';
+import { ConnectionContext, ConnectionState } from './ConnectionContext';
 
 export interface UserInfo {
   player: number | null;
 };
 
 function UserInfo() {
-  let socket: ConnectionService | undefined  = useContext(ConnectionContext);
+  let socket: ConnectionState | undefined  = useContext(ConnectionContext);
   return (
     <Typography variant="h6">
-      Hello. You are connected as {socket?.user.player}
+      Hello. You are connected as {socket?.user}
     </Typography>
   ) ;
 }
 
 function ModeSelector() {
-  let socket: ConnectionService | undefined = useContext(ConnectionContext);
+  let socket: ConnectionState | undefined = useContext(ConnectionContext);
   let modes = [
     'Billboard',
     'Lightcycles',
@@ -46,7 +46,7 @@ function ModeSelector() {
               <List >
                 {modes.map((m) => (
                   <ListItem key={m}>
-                    <Button  aria-label="delete"  onClick={() => {socket?.changeMode(m)} }>
+                    <Button  aria-label="delete"  onClick={() => {socket?.setUser(2)} }>
                     <Avatar>
                     </Avatar>
                     <ListItemText
@@ -63,12 +63,43 @@ function ModeSelector() {
   )
 }
 
-function App() {
-  let connectionService = new ConnectionService();
-  connectionService.initSocket();
+interface IProps {
+  children: React.ReactNode;
+  // any other props that come into the component
+}
+
+
+function ConnectProvider({children}: IProps) {
+  //let connectionService = new ConnectionService();
+  //connectionService.initSocket();
+
+  const setUser = (u: number)  => {
+    updateConnection(prevState => {
+      return {
+        ...prevState,
+        user: u
+      }
+    })
+  }
+
+  const connectionState = {
+    socketio: null,
+    user: 4,
+    setUser: setUser
+  };
+
+  const [connection, updateConnection] = useState(connectionState)
 
   return (
-    <ConnectionContext.Provider value={connectionService}>
+    <ConnectionContext.Provider value={connection}>
+      {children}
+    </ConnectionContext.Provider>
+);
+}
+
+function App() {
+  return (
+    <ConnectProvider>
       <div className="App">
         <header className="App-header">
           <UserInfo/>
@@ -76,7 +107,7 @@ function App() {
           <canvas className="whiteboard" ></canvas>
         </header>
       </div>
-    </ConnectionContext.Provider>
+    </ConnectProvider>
 );
 }
 
