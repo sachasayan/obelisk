@@ -1,14 +1,10 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import './App.css';
 import {
   Button,
   ButtonGroup,
   Grid,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
-  Avatar,
   Paper
 }  from '@material-ui/core';
 import { palette, spacing, typography } from '@material-ui/system';
@@ -92,7 +88,16 @@ function ConnectProvider({children}: IProps) {
     setUser: setUser
   };
 
-  //connectionState.socket.on('obeliskAssignUser', setUser);
+
+  useEffect(() => {
+    connectionState.socket.on('obeliskAssignUser', setUser);
+    console.log('Listening for user assignment...');
+    return () => {
+      console.log('Cleaning up listener...');
+      connectionState.socket.off('obeleiskAssignUser');
+    };
+  }, []);
+
 
   const [connection, updateConnection] = useState(connectionState)
 
