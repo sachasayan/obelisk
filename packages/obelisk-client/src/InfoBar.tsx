@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import MenuIcon from '@material-ui/icons/Menu';
+import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import SportsEsportsIcon from '@material-ui/icons/SportsEsports';
 import './App.css';
 import {
@@ -24,9 +24,9 @@ function InfoBar() {
           alignItems="center"
         >
           <Typography variant="h6" color="inherit">
-            Obelisk
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           </Typography>
-            <MenuIcon />
+            <ViewWeekIcon />
           <Typography variant="h6" color="inherit">
             <SportsEsportsIcon />
             {socket?.user}

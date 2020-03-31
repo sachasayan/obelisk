@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import './App.css';
+import './ModeSelector.css';
 import {
   Button,
   Grid,
@@ -29,10 +29,10 @@ function ModeSelector() {
   }
   return (
     <>
-      <Grid item >
+      <Grid item className="ModeSelector">
         {modes.map((m) => (
-          <Paper key={m} elevation={3} style={{margin: '20px', padding: '20px'}} >
-            <Button variant="contained" color="primary" aria-label="delete"  onClick={() => {changeMode(m)} }>
+          <Paper className="Paper" key={m} elevation={3} style={{backgroundImage: `url(/modes/${m}.jpg)`}} >
+            <Button className="Button" variant="contained" color="primary" aria-label="delete"  onClick={() => {changeMode(m)} }>
             {m}
             </Button>
           </Paper>

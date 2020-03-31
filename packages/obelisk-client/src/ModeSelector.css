@@ -1,0 +1,21 @@
+.ModeSelector {
+  text-align: center;
+}
+
+
+.ModeSelector .Paper {
+  background: #333;
+  text-align: right;
+  margin: 20px;
+  padding: 20px;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+
+.ModeSelector .Button {
+  box-shadow: 0px 0px 500px 200px rgba(0,0,0,0.8);
+}
+
+
