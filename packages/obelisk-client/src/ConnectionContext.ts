@@ -1,7 +1,4 @@
-
 import React  from 'react';
-
-
 
 export interface ConnectionState {
   socket: any,
@@ -10,8 +7,6 @@ export interface ConnectionState {
 };
 
 export const ConnectionContext = React.createContext<ConnectionState | undefined>(undefined);
-
-
 
 // export class ConnectionService {
 //   user: UserInfo;
