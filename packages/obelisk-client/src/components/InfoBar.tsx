@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import ViewWeekIcon from '@material-ui/icons/ViewWeek';
 import SportsEsportsIcon from '@material-ui/icons/SportsEsports';
-import './App.css';
+
 import {
   Grid,
   Typography,
@@ -9,7 +9,7 @@ import {
   AppBar
 }  from '@material-ui/core';
 import { palette, spacing, typography } from '@material-ui/system';
-import { ConnectionContext, ConnectionState } from './ConnectionContext';
+import { ConnectionContext, ConnectionState } from '../providers/ConnectionContext';
 
 function InfoBar() {
   let socket: ConnectionState | undefined  = useContext(ConnectionContext);

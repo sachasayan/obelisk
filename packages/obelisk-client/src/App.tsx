@@ -1,10 +1,10 @@
 import React from 'react';
 import './App.css';
 
-import { ConnectProvider } from './ConnectionContext';
+import { ConnectProvider } from './providers/ConnectionContext';
 
-import ModeSelector from './ModeSelector';
-import InfoBar from './InfoBar';
+import ModeSelector from './components/ModeSelector';
+import InfoBar from './components/InfoBar';
 
 function App() {
   return (
