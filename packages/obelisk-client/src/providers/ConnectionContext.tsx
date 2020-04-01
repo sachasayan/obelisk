@@ -32,10 +32,15 @@ export function ConnectProvider({children}: IProps) {
     connectionState.socket = io();
     connectionState.socket.on('obeliskAssignUser', setUser);
     console.log('Listening for user assignment...');
+    connectionState.socket.on('obeliskLaunchController', setUser);
+    console.log('Listening for control signals...');
     return () => {
-      console.log('Cleaning up listener...');
       connectionState.socket.off('obeleiskAssignUser');
+      connectionState.socket.off('obeliskLaunchController');
+      console.log('Cleaning up listeners...');
     };
+
+
   }, []);
 
   const [connection, updateConnection] = useState(connectionState);
@@ -46,42 +51,3 @@ export function ConnectProvider({children}: IProps) {
     </ConnectionContext.Provider>
   );
 }
-
-// export class ConnectionService {
-//   user: UserInfo;
-
-//   socket: any;
-
-//   constructor (){
-//     this.user = {
-//       x: null,
-//       y: null,
-//       player: 4,
-//     };
-//   }
-
-//   initSocket(){
-//     this.socket = io();
-//     this.socket.on('obelisk', this.onObeliskEvent);
-//     this.socket.on('obeliskAssignUser', this.onAssignUser);
-//   }
-
-//   // Send out requests
-//   changeMode(mode: string){
-//     console.log('Changing mode... ', mode);
-//     this.socket.emit('changeMode', mode);
-//   }
-
-//   // Used when receiving server data
-//   onObeliskEvent(data: any){
-//     console.log(data);
-//   }
-
-//   onAssignUser(data: any){
-//     console.log('Assigning user..', data);
-//     this.user.player = data;
-//   }
-
-// };
-
-

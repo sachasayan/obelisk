@@ -8,7 +8,6 @@ import {
   Toolbar,
   AppBar
 }  from '@material-ui/core';
-import { palette, spacing, typography } from '@material-ui/system';
 import { ConnectionContext, ConnectionState } from '../providers/ConnectionContext';
 
 function InfoBar() {
