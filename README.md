@@ -28,13 +28,15 @@ Things to look out for when shopping for panels:
 
 - **Physical dimensions**, which are a product of....
 - **Dot Pitch**, signified by P1, P5, P10, etc. 
-	-	Specifies the area res. The pitch number represents the distance in mm between each pixel, ie this means that a P10 32x32 panel will always be 320mm x 320mm in total dimensions. A P5 32x32 panel will be 160mm x 160mm. 
+	-	The pitch number represents how detailed a display is. The smaller the number, the closer the pixels are together. 
+  - The number itself meaures distance in mm between each pixel. 
+  - This means that a P10 32x32 panel will always be 320mm x 320mm in total dimensions, a P5 32x32 panel will be 160mm x 160mm, and so on. 
 - and **Resolution**, most commonly 32x32, 32x16, and 64x32
   - Pretty self-explanatory. Most indoor panels tend to be 64x32 rectangles
 - **Scan**, almost always in powers of two: 1/2, 1/4, 1/8, 1/16
   - These panels are multiplexed, meaning they only update certain rows at a time (faster than the human eye can detect) the scan rate signifies how often rows are updated. 
   - A 1/2 panel is as fast as you can get, alternating every other row. First odd number rows are updated, then even number rows, then odd, then even... 
-  - A 1/8 panel updates each row
+  - A 1/8 panel updates each row every eight passes. 
   - Generally, you want as fast as you can get, but as with all things, there's a cost tradeoff. I'd say 1/4 or 1/8 scan panels are just fine for most uses. Try to avoid 1/16 panels or above unless you're doing purely static displays of text or images. 
 - **Brightness**, measured in cd/m2
   - Outdoor panels typically exceed 6000cd/m2, which is incredibly bright. 
@@ -46,20 +48,24 @@ Typically, these panels actually have significant power draw requirements. Yes, 
 
 These panels are essentially 'raw' LEDs with no intelligence behind them. You need a computer with GPIO capability to control them. An Arduino or Sparkfun Adafruit are usable with HZeller's original library, but this project is meant to be run on a Raspberry Pi. I'd recommend an RPi4 if you can get your hands on one — otherwise, an RPi3 should work just fine. 
 
-You also need an adaptor for the GPIO pins on your Raspberry Pi to match the common 16-pin IDC format used by these kinds of LED panels. I recommend [this one made by ElectroDragon](https://www.electrodragon.com/product/rgb-matrix-panel-drive-board-raspberry-pi/), based of Henner Zeller's schematics. There are also some other panels schematics available in [his GitHub repo](https://github.com/hzeller/rpi-rgb-led-matrix) to address other specific needs. I'll also soon be offering passive panels for sale, by mail, which you'll need minimal soldering experience to make work for you. 
+You also need an adaptor for the GPIO pins on your Raspberry Pi to match the common 16-pin IDC format used by these kinds of LED panels. I recommend [this one made by ElectroDragon](https://www.electrodragon.com/product/rgb-matrix-panel-drive-board-raspberry-pi/), based of Henner Zeller's schematics. There are also some other panels schematics available in [his GitHub repo](https://github.com/hzeller/rpi-rgb-led-matrix) to address other specific needs. I'll also soon be offering passive panels of my own design for sale, by mail, which you'll need minimal soldering experience to make work for you. 
 
 ## Getting all set up with the software
 
  You'll need:
  
 - **Git**, used to pull the project code. 
-- **gcc**, to compile hzeller's 
+- **GCC**, to compile hzeller's original code, which this project draws from. 
 - **NVM + Node** as the best way to get sudo-less Node code running on an RPi
 - **Yarn** is used to manage the workspaces (server + client) of the project. 
 
 On a Raspberry Pi, you'll want to do most of this manually. 
 
-#### NVM
+#### Disable sound
+
+The RPi uses the same high-frequency hardware (called a pulse generator) to drive the board as it does to generate sound. As a result, you actually cannot use sound functionality at the same time as driving a board, and it must be disabled. See HZeller's Github for advice on how to achieve this. 
+
+#### Install NVM
 
 https://github.com/nvm-sh/nvm#installing-and-updating
 
@@ -68,7 +74,7 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
 ```
 
 
-#### Yarn 
+#### Install Yarn 
 
 https://classic.yarnpkg.com/en/docs/install#debian-stable
 
@@ -76,6 +82,14 @@ https://classic.yarnpkg.com/en/docs/install#debian-stable
 curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
 echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 sudo apt update && sudo apt install --no-install-recommends yarn
+```
+
+#### Get Packages
+
+With the terminal, `cd` into your `obelisk` directory and run: 
+
+```
+yarn
 ```
 
 #### Configuration
