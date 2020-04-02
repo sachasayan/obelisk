@@ -19,14 +19,12 @@ TL;DR:
 - You need something to adapt the GPIO pins from a Raspberry Pi to the common 16-pin IDC format used by these kinds of LED panels
 ```
 
-You'll need a set of panels meant for outdoor or indoor signage, such as [these](https://www.aliexpress.com/item/32382300128.html). Typically, they're bought in the dozens or hundreds for massive outdoor displays, but these boards aren't difficult to find on sites like Ebay or Aliexpress in small quantities. The boards I'm using are made by a company called LysonLed that sells their panels [here](https://www.aliexpress.com/store/709678).
-
-**There are two main types of panels:**
+You'll need a set of panels meant for outdoor or indoor signage, such as [these](https://www.aliexpress.com/item/32382300128.html). 
 
 - Indoor panels tend to be higher resolution, and cheaper. 
 - Outdoor panels tend to be brighter and have higher refresh rates, usually at the expense of resolution and with increased cost. Outdoor panels also come with circuitry waterproofing, which may or may not be beneficial depending on your needs, but is almost always a plus. 
 
-**Things to look out for when shopping for panels:**
+Things to look out for when shopping for panels: 
 
 - **Physical dimensions**, which are a product of....
 - **Dot Pitch**, signified by P1, P5, P10, etc. 
