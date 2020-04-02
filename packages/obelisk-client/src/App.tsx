@@ -30,11 +30,10 @@ function App() {
             <Route exact path="/">
               <ModeSelector/>
             </Route>
-            <Route path="/about">
+            <Route path="/controler">
               <Controller/>
             </Route>
           </Switch>
-          <canvas className="whiteboard" ></canvas>
         </div>
       </Router>
     </ConnectProvider>
