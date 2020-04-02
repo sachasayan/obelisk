@@ -7,6 +7,15 @@ import ModeSelector from './components/ModeSelector';
 import InfoBar from './components/InfoBar';
 import Controller from './components/Controller';
 
+
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Link
+} from 'react-router-dom';
+
+
 function App() {
 
 

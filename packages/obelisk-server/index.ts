@@ -20,14 +20,8 @@ if (config.runServer){
   server.io = require('socket.io')(server.http);
   server.port = process.env.PORT || 80;
   if (config.initPanel){
-    server.dyndns = new DynDNSClient({
-      url                 : "dynamicdns.park-your-domain.com",
-      username            : 'obelisk.me',
-      password            : '2861a862d09a436fbf2d72375af94d24',
-      network_interface   : 'wlan0',
-      protocol            : 'ipv4',
-      check               : 60
-    });
+    let dyndnsConfig = require('./dyndnsconfig.json');
+    server.dyndns = new DynDNSClient(dyndnsConfig);
   }
   let onConnection = (socket) => {
     players = [socket];

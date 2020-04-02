@@ -1,0 +1,8 @@
+{
+  url                 : "dynamicdns.your-host-domain.com",
+  username            : 'your-domain.com',
+  password            : '815925082a791a6f5e2bc6dba065d83e',
+  network_interface   : 'wlan0',
+  protocol            : 'ipv4',
+  check               : 60
+}
