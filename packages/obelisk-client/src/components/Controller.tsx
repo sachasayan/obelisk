@@ -1,6 +1,7 @@
 import React from 'react';
 import {
-  Paper
+  Paper,
+  Button
 }  from '@material-ui/core';
 
 import './Controller.css';
@@ -88,8 +89,8 @@ class Controller extends React.Component<{},ControllerState>{
     this.setState((prev) => ({
       ...prev,
       current: {
-        x : e.clientX - rect.left || e.touches[0].clientX - rect.left,
-        y : e.clientY - rect.top || e.touches[0].clientY - rect.top
+        x : !!e.touches ?  e.touches[0].clientX - rect.left : e.clientX - rect.left,
+        y : !!e.touches ?  e.touches[0].clientY - rect.top : e.clientY - rect.top
       }
     }));
 
@@ -125,7 +126,9 @@ class Controller extends React.Component<{},ControllerState>{
     <>
       <Paper className="Controller-Paper" elevation={3}>
         <canvas ref={this.state.ctxRef} />
+        <Button className="close">X Close</Button>
       </Paper>
+
     </>
     )
   }
