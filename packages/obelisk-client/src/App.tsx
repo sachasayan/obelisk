@@ -21,16 +21,24 @@ function App() {
 
   return (
     <ConnectProvider>
-      <div className="App">
-        <header className="App-header">
-          <InfoBar/>
-          <Controller />
-          <ModeSelector/>
+      <Router>
+        <div className="App">
+          <header className="App-header">
+            <InfoBar/>
+          </header>
+          <Switch>
+            <Route exact path="/">
+              <ModeSelector/>
+            </Route>
+            <Route path="/about">
+              <Controller/>
+            </Route>
+          </Switch>
           <canvas className="whiteboard" ></canvas>
-        </header>
-      </div>
+        </div>
+      </Router>
     </ConnectProvider>
-);
+  );
 }
 
 export default App;
