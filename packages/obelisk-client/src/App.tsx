@@ -30,7 +30,7 @@ function App() {
             <Route exact path="/">
               <ModeSelector/>
             </Route>
-            <Route path="/controler">
+            <Route path="/controller">
               <Controller/>
             </Route>
           </Switch>
