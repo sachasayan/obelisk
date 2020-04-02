@@ -13,7 +13,6 @@ import { ConnectionContext, ConnectionState } from '../providers/ConnectionConte
 function InfoBar() {
   let socket: ConnectionState | undefined  = useContext(ConnectionContext);
   return (
-
     <AppBar position="static">
       <Toolbar>
         <Grid
@@ -33,7 +32,6 @@ function InfoBar() {
         </Grid>
       </Toolbar>
     </AppBar>
-
   ) ;
 }
 

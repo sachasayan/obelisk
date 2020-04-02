@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { IProps } from './types';
 import io from 'socket.io-client';
+import { useHistory } from 'react-router-dom';
 
 export interface ConnectionState {
   socket: any,
@@ -11,6 +12,7 @@ export interface ConnectionState {
 export const ConnectionContext = React.createContext<ConnectionState | undefined>(undefined);
 
 export function ConnectProvider({children}: IProps) {
+  const history = useHistory();
 
   const setUser = (u: number)  => {
     console.log('Setting user..', u);
@@ -19,8 +21,16 @@ export function ConnectProvider({children}: IProps) {
         ...prevState,
         user: u
       }
-    })
+    });
   }
+
+  const initController = (u: number)  => {
+    console.log('Launching controller...', u);
+
+    history.push('/controller');
+  }
+
+
 
   const connectionState: ConnectionState = {
     socket: undefined,
@@ -32,11 +42,11 @@ export function ConnectProvider({children}: IProps) {
     connectionState.socket = io();
     connectionState.socket.on('obeliskAssignUser', setUser);
     console.log('Listening for user assignment...');
-    connectionState.socket.on('obeliskLaunchController', setUser);
+    connectionState.socket.on('obeliskInitController', initController);
     console.log('Listening for control signals...');
     return () => {
       connectionState.socket.off('obeleiskAssignUser');
-      connectionState.socket.off('obeliskLaunchController');
+      connectionState.socket.off('obeliskInitController');
       console.log('Cleaning up listeners...');
     };
 
@@ -51,3 +61,4 @@ export function ConnectProvider({children}: IProps) {
     </ConnectionContext.Provider>
   );
 }
+

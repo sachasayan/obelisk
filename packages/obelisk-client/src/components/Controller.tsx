@@ -6,6 +6,11 @@ import {
 
 import './Controller.css';
 
+
+import {
+  Link
+} from 'react-router-dom';
+
 interface ControllerState{
   ctxRef: any
   canvas: any,
@@ -126,7 +131,9 @@ class Controller extends React.Component<{},ControllerState>{
     <>
       <Paper className="Controller-Paper" elevation={3}>
         <canvas ref={this.state.ctxRef} />
-        <Button className="close">X Close</Button>
+        <Link to="/">
+          <Button className="close">X Close</Button>
+        </Link>
       </Paper>
 
     </>

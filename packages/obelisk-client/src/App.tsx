@@ -7,7 +7,6 @@ import ModeSelector from './components/ModeSelector';
 import InfoBar from './components/InfoBar';
 import Controller from './components/Controller';
 
-
 import {
   BrowserRouter as Router,
   Switch,
@@ -15,13 +14,10 @@ import {
   Link
 } from 'react-router-dom';
 
-
 function App() {
-
-
   return (
-    <ConnectProvider>
-      <Router>
+    <Router>
+      <ConnectProvider>
         <div className="App">
           <header className="App-header">
             <InfoBar/>
@@ -35,8 +31,8 @@ function App() {
             </Route>
           </Switch>
         </div>
-      </Router>
-    </ConnectProvider>
+      </ConnectProvider>
+    </Router>
   );
 }
 
