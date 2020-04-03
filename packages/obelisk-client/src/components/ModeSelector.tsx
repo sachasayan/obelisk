@@ -11,14 +11,14 @@ import { ConnectionContext, ConnectionState } from '../providers/ConnectionConte
 function ModeSelector() {
   let connection: ConnectionState | undefined = useContext(ConnectionContext);
   let modes = [
-    'Billboard',
-    'Lightcycles',
-    'Munchman',
-    'Pong',
-    'Pulse',
-    'Space',
-    'Sunlight',
-    'Test',
+    'billboard',
+    'lightcycles',
+    'munchman',
+    'pong',
+    'pulse',
+    'space',
+    'sunlight',
+    'test',
     'exit',
   ];
 
