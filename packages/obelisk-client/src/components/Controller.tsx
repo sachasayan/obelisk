@@ -43,6 +43,9 @@ class Controller extends React.Component<{},ControllerState>{
     let canvas = this.state.ctxRef.current;
     let context = canvas.getContext('2d');
 
+    canvas.width  = 300;
+    canvas.height = 300;
+
     canvas.addEventListener('mousedown', this.onDown, false);
     canvas.addEventListener('mouseup', this.onUp, false);
     canvas.addEventListener('mouseout', this.onUp, false);
@@ -131,11 +134,10 @@ class Controller extends React.Component<{},ControllerState>{
     <>
       <Paper className="Controller-Paper" elevation={3}>
         <canvas ref={this.state.ctxRef} />
-        <Link to="/">
-          <Button className="close">X Close</Button>
-        </Link>
       </Paper>
-
+      <Link to="/">
+          <Button className="close">Home</Button>
+      </Link>
     </>
     )
   }

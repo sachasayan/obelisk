@@ -1,18 +1,10 @@
 .Controller-Paper {
-position: fixed;
-top: 50%;
-left: 50%;
-margin-left: -150px;
-margin-top: -150px;
+margin: 50px auto;
 width: 300px;
 height: 300px;
 z-index: 10;
 }
 
-.Controller-Paper .close{
-background-color: rgb(184, 184, 184);
-position: absolute;
-bottom: -50px;
-right: 0px;
-
+.close{
+background-color: rgb(255,255,255) !important;
 }
