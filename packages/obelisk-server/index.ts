@@ -56,6 +56,7 @@ let changeMode = (mode: string) => {
   let modes = {
     'billboard': Billboard,
     'lightcycles': Lightcycles,
+    'munchman': Munchman,
     'pong': Pong,
     'pulse': Pulse,
     'space': Space,
