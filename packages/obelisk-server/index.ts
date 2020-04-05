@@ -52,15 +52,15 @@ if (config.runServer){
 
 
 let changeMode = (mode: string) => {
+  console.log('Changing mode to...', mode);
   let modes = {
-    'Billboard': Billboard,
-    'Lightcycles': Lightcycles,
-    'Munchman': Munchman,
-    'Pong': Pong,
-    'Pulse': Pulse,
-    'Space': Space,
-    'Sunlight': Sunlight,
-    'Test': Test
+    'billboard': Billboard,
+    'lightcycles': Lightcycles,
+    'pong': Pong,
+    'pulse': Pulse,
+    'space': Space,
+    'sunlight': Sunlight,
+    'test': Test
   }
   if (config.initPanel && matrix) {
     if (mode === 'exit'){
