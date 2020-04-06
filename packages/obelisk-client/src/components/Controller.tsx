@@ -56,11 +56,11 @@ class Controller extends React.Component<{},ControllerState>{
     canvas.addEventListener('mousedown', this.onDown, false);
     canvas.addEventListener('mouseup', this.onUp, false);
     canvas.addEventListener('mouseout', this.onUp, false);
-    canvas.addEventListener('mousemove', debounce(this.onMove, 30), false);
+    canvas.addEventListener('mousemove', debounce(this.onMove, 10), false);
     canvas.addEventListener('touchstart', this.onDown, false);
     canvas.addEventListener('touchend', this.onUp, false);
     canvas.addEventListener('touchcancel', this.onUp, false);
-    canvas.addEventListener('touchmove', debounce(this.onMove, 30), false);
+    canvas.addEventListener('touchmove', debounce(this.onMove, 10), false);
 
     this.setState((prev) => ({
       ...prev,
