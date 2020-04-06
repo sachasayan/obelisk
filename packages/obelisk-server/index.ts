@@ -31,7 +31,7 @@ if (config.runServer){
     socket.on('changeMode', (data) => {
       config.verbose ? console.log('Recieved request to change mode to', data) : 0;
       changeMode(data);
-      if (data == 'pong'){
+      if (data == 'pong' || data == 'Pong'){
         config.verbose ? console.log('Initializing controller:', data) : 0;
         socket.emit('obeliskInitController', 'pong');
       }
@@ -70,7 +70,7 @@ let changeMode = (mode: string) => {
       //process.exit(0);
     } else if (mode === 'pong') {
       matrix.afterSync(() => {});
-      modes[mode].init(matrix, players);
+      modes[mode].init(matrix, playerData);
     } else {
       matrix.afterSync(() => {});
       modes[mode].init(matrix);
