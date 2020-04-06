@@ -67,10 +67,14 @@ let changeMode = (mode: string) => {
     if (mode === 'exit'){
       matrix.afterSync(() => {});
       matrix.clear().sync();
-      process.exit(0);
+      //process.exit(0);
+    } else if (mode === 'pong') {
+      matrix.afterSync(() => {});
+      modes[mode].init(matrix, players);
+    } else {
+      matrix.afterSync(() => {});
+      modes[mode].init(matrix);
     }
-    matrix.afterSync(() => {});
-    modes[mode].init(matrix);
   }
 }
 
