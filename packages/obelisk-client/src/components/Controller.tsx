@@ -11,7 +11,7 @@ import {
   Link
 } from 'react-router-dom';
 
-import { ConnectionContext, ConnectionState } from '../providers/ConnectionContext';
+import { ConnectionContext, ConnectionState, ConnectProvider } from '../providers/ConnectionContext';
 
 
 interface ControllerState{
@@ -26,6 +26,8 @@ interface ControllerState{
 }
 
 class Controller extends React.Component<{},ControllerState>{
+
+  static contextType = ConnectionContext;
 
   constructor(props: any) {
     super(props);
@@ -107,12 +109,10 @@ class Controller extends React.Component<{},ControllerState>{
 
     this.draw();
 
-    let connection: ConnectionState | undefined = useContext(ConnectionContext);
-
-    connection?.socket.emit('drawing', {
+    this.context.socket.emit('drawing', {
       x: this.state.current.x / this.state.canvas.width,
       y: this.state.current.y / this.state.canvas.height,
-      player: connection?.user
+      player: this.context.user
     });
 
   }
