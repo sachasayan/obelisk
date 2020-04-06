@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import {
   Paper,
   Button
@@ -10,6 +10,9 @@ import './Controller.css';
 import {
   Link
 } from 'react-router-dom';
+
+import { ConnectionContext, ConnectionState } from '../providers/ConnectionContext';
+
 
 interface ControllerState{
   ctxRef: any
@@ -104,11 +107,13 @@ class Controller extends React.Component<{},ControllerState>{
 
     this.draw();
 
-    // socket.emit('drawing', {
-    //   x: this.current.x / this.canvas.width,
-    //   y: this.current.y / this.canvas.height,
-    //   player: current.player
-    // });
+    let connection: ConnectionState | undefined = useContext(ConnectionContext);
+
+    connection?.socket.emit('drawing', {
+      x: this.state.current.x / this.state.canvas.width,
+      y: this.state.current.y / this.state.canvas.height,
+      player: connection?.user
+    });
 
   }
 
