@@ -31,7 +31,7 @@ if (config.runServer){
     socket.on('changeMode', (data) => {
       config.verbose ? console.log('Recieved request to change mode to', data) : 0;
       changeMode(data);
-      if (data == 'Pong'){
+      if (data == 'pong'){
         config.verbose ? console.log('Initializing controller:', data) : 0;
         socket.emit('obeliskInitController', 'pong');
       }
