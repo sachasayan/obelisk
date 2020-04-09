@@ -7,9 +7,17 @@ import { config, matrixOptions, runtimeOptions } from './config';
 import { CliMode } from './types';
 
 let server: any = {};
+let activeMode: {init, deactivate} | null;
 let matrix;
 let players = [];
 let playerData: {y: number}[] = [{y: 0}];
+
+let state = {
+  matrix: matrix,
+  activeMode: null,
+  players: players,
+  playerData: playerData
+};
 
 if (config.runServer){
   let express = require('express');
@@ -24,9 +32,9 @@ if (config.runServer){
     server.dyndns = new DynDNSClient(dyndnsConfig);
   }
   let onConnection = (socket) => {
-    players = [socket];
-    console.log("Connected to socket, assigning player", players.length);
-    socket.emit('obeliskAssignUser', players.length);
+    state.players = [socket];
+    console.log("Connected to socket, assigning player", state.players.length);
+    socket.emit('obeliskAssignUser', state.players.length);
 
     socket.on('changeMode', (data) => {
       config.verbose ? console.log('Recieved request to change mode to', data) : 0;
@@ -37,11 +45,11 @@ if (config.runServer){
       }
     });
     socket.on('drawing', (data) => {
-      playerData[0] = {y: data.y};
+      state.playerData[0] = {y: data.y};
     });
     socket.on('disconnect', (reason) => {
-      players = players.filter(s => s.id != socket.id );
-      players.forEach((s, i) => s.emit('obeliskAssignUser',  i+1));
+      state.players = state.players.filter(s => s.id != socket.id );
+      state.players.forEach((s, i) => s.emit('obeliskAssignUser',  i+1));
     });
   };
   server.io.on('connection', onConnection);
@@ -49,7 +57,6 @@ if (config.runServer){
   server.app.use(express.static('../obelisk-client/build'));
   server.http.listen(server.port, () => console.log('Server started. Listening on :' + server.port));
 }
-
 
 let changeMode = (mode: string) => {
   console.log('Changing mode to...', mode);
@@ -61,19 +68,19 @@ let changeMode = (mode: string) => {
     'pulse': Pulse,
     'space': Space,
     'sunlight': Sunlight,
-    'test': Test
+    'test': Test,
+    'exit': null
   }
-  if (config.initPanel && matrix) {
-    if (mode === 'exit'){
-      matrix.afterSync(() => {});
-      matrix.clear().sync();
+  state.activeMode?.deactivate ? state.activeMode.deactivate() : 0;
+  state.activeMode = modes[mode];
+  if (config.initPanel && state.matrix) {
+    if (!state.activeMode){ // Aka, exit
+      state.matrix.afterSync(() => {});
+      state.matrix.clear().sync();
       //process.exit(0);
-    } else if (mode === 'pong') {
-      matrix.afterSync(() => {});
-      modes[mode].init(matrix, playerData);
     } else {
-      matrix.afterSync(() => {});
-      modes[mode].init(matrix);
+      state.matrix.afterSync(() => {});
+      state.activeMode.init(state);
     }
   }
 }
@@ -81,8 +88,8 @@ let changeMode = (mode: string) => {
 if (config.initPanel) {
   (async () => {
     try {
-      matrix = new LedMatrix(matrixOptions, runtimeOptions);
-      matrix.clear();
+      state.matrix = new LedMatrix(matrixOptions, runtimeOptions);
+      state.matrix.clear();
     }
     catch (error) {
       console.error(`${__filename} caught: `, error);

@@ -10,6 +10,10 @@ import {
   LightCycle
 } from './lightcycles.types';
 
+let asyncs = {
+  intervals: [],
+  timeouts: []
+};
 let matrix;
 
 let gameSettings = {
@@ -68,7 +72,7 @@ function tick(){
       gameState.players.some(p => p.status == 'alive') ? null : resetGame();
 
   });
-  setTimeout(tick, gameSettings.tick);
+  asyncs.timeouts.push(setTimeout(tick, gameSettings.tick));
 }
 //////////////////////
 // GAME SCREENS
@@ -104,8 +108,8 @@ function gameLoop(t: number){
 // GAME SCREENS
 //////////////////////
 
-function init (m){
-    matrix = m;
+function init (state){
+    matrix = state.matrix;
     matrix.clear();
 
     // Render loop
@@ -118,12 +122,17 @@ function init (m){
     });
 
     resetGame();
-    setTimeout(tick, 1000);
+    asyncs.timeouts.push(setTimeout(tick, 1000));
     matrix.sync();
 
 }
 
+function deactivate() {
+  asyncs.intervals.map(e => clearInterval(e));
+  asyncs.timeouts.map(e => clearTimeout(e));
+}
 
-let Lightcycles = { init };
+
+let Lightcycles = { init, deactivate };
 
 export { Lightcycles };

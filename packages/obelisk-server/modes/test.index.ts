@@ -2,7 +2,8 @@
 
 const wait = (t: number) => new Promise(ok => setTimeout(ok, t));
 
-function init (matrix){
+function init (state){
+  let { matrix } = state;
   (async () => {
       matrix.clear();
 
@@ -28,7 +29,10 @@ function init (matrix){
   })();
 };
 
-let Test = { init };
+function deactivate() {
+}
+
+let Test = { init, deactivate };
 
 
 export { Test };

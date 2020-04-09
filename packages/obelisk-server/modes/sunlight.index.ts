@@ -1,5 +1,5 @@
-
-function init (matrix){
+function init (state){
+  let { matrix } = state;
   matrix.clear();
   matrix.afterSync((mat, dt, t) => {
     matrix.clear();
@@ -14,6 +14,8 @@ function init (matrix){
   });
 }
 
-let Sunlight = { init };
+function deactivate() {}
+
+let Sunlight = { init, deactivate };
 
 export { Sunlight };

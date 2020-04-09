@@ -14,6 +14,10 @@ import {
 
 import { fade, colors, getAdjacent } from './munchman.utils';
 
+let asyncs = {
+  intervals: [],
+  timeouts: []
+};
 let matrix;
 
 let gameSettings: MunchGameSettings = {
@@ -84,7 +88,7 @@ function handlePlayerMovement() {
   }
 
   hitDetection();
-  setTimeout(handlePlayerMovement, gameSettings.playerTick);
+  asyncs.timeouts.push(setTimeout(handlePlayerMovement, gameSettings.playerTick));
 }
 
 function handleGhostMovement(){
@@ -104,7 +108,7 @@ function handleGhostMovement(){
   });
   hitDetection();
 
-  setTimeout(handleGhostMovement, gameSettings.ghostsTick);
+  asyncs.timeouts.push(setTimeout(handleGhostMovement, gameSettings.ghostsTick));
 }
 
 function hitDetection() {
@@ -114,7 +118,7 @@ function hitDetection() {
   if (field[player.y][player.x] === 'P') {
     field[player.y][player.x] = 'O';
     sickoMode = true;
-    setTimeout(() => { sickoMode = false}, 5000);
+    asyncs.timeouts.push(setTimeout(() => { sickoMode = false}, 5000));
   }
 
   // Did player hit a ghost? Die, sorry. :(
@@ -182,8 +186,9 @@ function gameLoop(t: number){
 //////////////////////
 
 
-function init (m){
-    matrix = m;
+function init (state){
+  matrix = state.matrix;
+  deactivate();
     // Load level
 
     Jimp.read('./images/munch-lvl.png')
@@ -197,15 +202,15 @@ function init (m){
           if (x == 127) { gameSettings.grid += '\n'; };
         });
         resetGame();
-        setTimeout(handlePlayerMovement, 2000);
-        setTimeout(handleGhostMovement, 2000);
+        asyncs.timeouts.push(setTimeout(handlePlayerMovement, 2000));
+        asyncs.timeouts.push(setTimeout(handleGhostMovement, 2000));
 
         matrix.afterSync((mat, dt, t) => {
         matrix.clear();
 
         gameLoop(t);
 
-        setTimeout(() => matrix.sync(), 0);
+        asyncs.timeouts.push(setTimeout(() => matrix.sync(), 0));
       });
       matrix.sync();
     })
@@ -224,10 +229,14 @@ function init (m){
       if ( 'wasd'.includes(key) ) { gameState.inputs.push(key); }
       process.stdout.write( key );       // write the key to stdout all normal like
     });
-
-
 }
 
-let Munchman = { init };
+function deactivate() {
+  asyncs.intervals.map(e => clearInterval(e));
+  asyncs.timeouts.map(e => clearTimeout(e));
+}
+
+
+let Munchman = { init, deactivate };
 
 export { Munchman };

@@ -5,6 +5,10 @@ import {
 } from 'rpi-led-matrix';
 const http = require('http');
 
+let asyncs = {
+  intervals: [],
+  timeouts: []
+};
 let matrix: any;
 let fonts;
 let nextbusInfo = '';
@@ -28,7 +32,7 @@ let tick = () => {
       nextbusInfo = departuresByRoute.length > 0 ? departuresByRoute[0].direction.prediction[0].minutes : null;
     });
   });
-  setTimeout(tick, 60*1000);
+  asyncs.timeouts.push(setTimeout(tick, 60*1000));
 }
 
 function displayGameScreen(){
@@ -61,8 +65,8 @@ function displayGameScreen(){
     .drawText(String(nextbusInfo) + 'm', 110, 5);
 }
 
-function init (m){
-    matrix = m;
+function init (state){
+    matrix = state.matrix;
     matrix.clear();
 
     fonts = [
@@ -86,18 +90,20 @@ function init (m){
     .then(img => {
       streetcar = img;
       matrix.sync();
-      setTimeout(tick, 1000);
+      asyncs.timeouts.push(setTimeout(tick, 1000));
     })
     .catch(err => {
       console.error(err);
     });
 
-
-
-
 }
 
-let Billboard = { init };
+function deactivate() {
+  asyncs.intervals.map(e => clearInterval(e));
+  asyncs.timeouts.map(e => clearTimeout(e));
+}
+
+let Billboard = { init, deactivate };
 
 export { Billboard };
 

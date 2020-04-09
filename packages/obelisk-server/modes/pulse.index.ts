@@ -15,7 +15,8 @@ class Pulser {
 }
 
 
-function init(matrix) {
+function init(state) {
+  let {matrix} = state;
   matrix.clear();
 
   const pulsers: Pulser[] = [];
@@ -37,7 +38,10 @@ function init(matrix) {
 
 }
 
-let Pulse = { init };
+function deactivate() {
+}
+
+let Pulse = { init, deactivate };
 
 
 export { Pulse };

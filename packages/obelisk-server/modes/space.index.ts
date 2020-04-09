@@ -28,8 +28,8 @@ class Star {
   }
 }
 
-function init (m){
-    matrix = m;
+function init (state){
+    matrix = state.matrix;
     matrix.clear();
 
     let rocket;
@@ -83,6 +83,9 @@ function init (m){
 
 }
 
-let Space = { init };
+function deactivate() {
+}
+
+let Space = { init, deactivate };
 
 export { Space };

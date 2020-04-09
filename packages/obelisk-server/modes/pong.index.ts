@@ -34,6 +34,10 @@ let gameSettings: PongGameSettings = {
 
 let gameState: PongGameState;
 
+let asyncs = {
+  intervals: [],
+  timeouts: []
+};
 let matrix: any;
 let players: any;
 let font;
@@ -70,11 +74,11 @@ function incrementScore(player: number){
   gameState.score[player]++;
   if (gameState.score[player] >= 10) {
     gameState.activeScreen = STATUS.WIN_SCREEN;
-    setTimeout(resetGameState, 2000);
-    setTimeout(tick, 3000);
+     asyncs.timeouts.push(setTimeout(resetGameState, 2000));
+     asyncs.timeouts.push(setTimeout(tick, 3000));
   } else {
     resetBall();
-    setTimeout(tick, 2000);
+     asyncs.timeouts.push(setTimeout(tick, 2000));
   }
 }
 
@@ -122,7 +126,9 @@ function tick() {
   }
 
   // Check for out of x bounds, if so apply score
-  if (ball.x >= 0 && ball.x <= matrix.width()) { setTimeout(() => {tick()}, (1 / ball.velocity) * 1000); };
+  if (ball.x >= 0 && ball.x <= matrix.width()) {
+    asyncs.timeouts.push(setTimeout(() => {tick()}, (1 / ball.velocity) * 1000));
+  };
   if (ball.x < 0) { incrementScore(0); };
   if (ball.x > matrix.width()) { incrementScore(1); };
 
@@ -176,9 +182,9 @@ function gameLoop(){
   }
 }
 
-function init (m, playerData){
-    players = playerData;
-    matrix = m;
+function init (state){
+    players = state.playerData;
+    matrix = state.matrix;
     matrix.clear();
 
     font = new Font('helvR12', `${process.cwd()}/fonts/helvR12.bdf`);
@@ -187,7 +193,7 @@ function init (m, playerData){
     matrix.font(font);
 
     resetGameState();
-    setTimeout(tick, 3000);
+    asyncs.timeouts.push(setTimeout(tick, 3000));
 
     matrix.afterSync((mat, dt, t) => {
       matrix.clear();
@@ -200,6 +206,11 @@ function init (m, playerData){
     matrix.sync();
 }
 
-let Pong = { init };
+function deactivate() {
+  asyncs.intervals.map(e => clearInterval(e));
+  asyncs.timeouts.map(e => clearTimeout(e));
+}
+
+let Pong = { init, deactivate };
 
 export { Pong };
