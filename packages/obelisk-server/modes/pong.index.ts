@@ -121,11 +121,11 @@ function tick() {
   // Did we hit a paddle? Reflect x.
   if ( ball.x < 1  && Math.abs(ball.y - gameState.paddles[0]) <= gameSettings.paddleRadius ){
       ball.x = 1 + (1- ball.x) ;
-      ball.heading = 0.25 + getSpread(0);
+      ball.heading = 0.25 - getSpread(0);
   }
   if ( ball.x > matrix.width()-1  && Math.abs(ball.y - gameState.paddles[1]) <= gameSettings.paddleRadius ){
       ball.x = matrix.width() + (matrix.width() - 1 - ball.x) ;
-      ball.heading = 0.75 - getSpread(1);
+      ball.heading = 0.75 + getSpread(1);
   }
 
   // Check for out of x bounds, if so apply score
