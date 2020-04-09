@@ -200,7 +200,7 @@ function init (state){
       inputLoop(t);
       gameLoop();
 
-      setTimeout(() => matrix.sync(), 0);
+      asyncs.timeouts.push(setTimeout(() => matrix.sync(), 0));
     });
 
     matrix.sync();

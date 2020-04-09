@@ -80,6 +80,7 @@ let changeMode = (mode: string) => {
       //process.exit(0);
     } else {
       state.matrix.afterSync(() => {});
+      state.matrix.clear().sync();
       state.activeMode.init(state);
     }
   }
