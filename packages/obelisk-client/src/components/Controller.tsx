@@ -139,9 +139,11 @@ class Controller extends React.Component<{},ControllerState>{
   render (){
     return (
     <>
+
       <Paper className="Controller-Paper" elevation={3}>
         <canvas ref={this.state.ctxRef} />
       </Paper>
+      <div style={{color: 'white', margin: '10px'}}> Psst.. Touch me to control me. ✌️</div>
       <Link to="/">
           <Button className="close">Home</Button>
       </Link>
