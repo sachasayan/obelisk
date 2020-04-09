@@ -7,7 +7,8 @@ import {
 
 
 interface PongGameSettings {
-  paddleRadius: number,
+  defaultBallVelocity: number;
+  paddleRadius: number;
 };
 
 enum STATUS {
@@ -29,6 +30,7 @@ interface PongGameState {
 };
 
 let gameSettings: PongGameSettings = {
+  defaultBallVelocity: 64,
   paddleRadius: 2
 };
 
@@ -49,10 +51,10 @@ function resetBall() {
     (Math.random() < 0.5 ? 0.25 : 0.75) + ((Math.random() * 0.25) - 0.125);
 
   gameState.ball = {
+    ...gameState.ball,
     x: (Math.floor(matrix.width()/2)),
     y: (Math.floor(matrix.height()/2)),
-    heading: heading,
-    velocity: 32, // in pixels per second
+    heading: heading
   }
 }
 
@@ -65,7 +67,7 @@ function resetGameState() {
       x: (Math.floor(matrix.width()/2)),
       y: (Math.floor(matrix.height()/2)),
       heading: (Math.random() < 0.5 ? 0.25 : 0.75) + ((Math.random() * 0.25) - 0.125), // (Math.random() * 0.25) + 0.125 + Math.random() < 0.5 ? 0 : 0.5,   // A random value within 45º of straight, randomly left or right.
-      velocity: 64, // in pixels per second
+      velocity: gameSettings.defaultBallVelocity, // in pixels per second
     },
   }
 }
