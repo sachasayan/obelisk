@@ -79,7 +79,7 @@ function incrementScore(player: number){
      asyncs.timeouts.push(setTimeout(resetGameState, 2000));
      asyncs.timeouts.push(setTimeout(tick, 3000));
   } else {
-    gameState.ball.velocity += 0;
+    gameState.ball.velocity = gameSettings.defaultBallVelocity + (4*Math.min(...gameState.score));
     resetBall();
     asyncs.timeouts.push(setTimeout(tick, 2000));
   }
