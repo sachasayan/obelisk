@@ -90,7 +90,7 @@ function inputLoop(t: number){
   let motorImprecision = (2 * Math.sin(1 * Math.PI * (t/1000)));
   gameState.paddles[1] = Math.round(
     ((1-certainty) * (matrix.height()/2)) + //Start with the middle
-    (certainty * (gameState.ball.y + motorImprecision)) // Where we're aiming for, with motor imprecision
+    (certainty * (gameState.ball.y)) // Where we're aiming for, with motor imprecision
   );
 }
 
@@ -113,19 +113,19 @@ function tick() {
     reflect();
   };
 
-  let getSpread = (): number => {
+  let getSpread = (paddle: number): number => {
     // IE, get the relative position of the ball to the center of the paddle...
-    return ((ball.y - gameState.paddles[0])  / gameSettings.paddleRadius) * 0.125; // 0.125 aka no more than 45º off center
+    return ((ball.y - gameState.paddles[paddle])  / gameSettings.paddleRadius) * 0.125; // 0.125 aka no more than 45º off center
   };
 
   // Did we hit a paddle? Reflect x.
   if ( ball.x < 1  && Math.abs(ball.y - gameState.paddles[0]) <= gameSettings.paddleRadius ){
       ball.x = 1 + (1- ball.x) ;
-      ball.heading = 0.25 + getSpread();
+      ball.heading = 0.25 + getSpread(0);
   }
   if ( ball.x > matrix.width()-1  && Math.abs(ball.y - gameState.paddles[1]) <= gameSettings.paddleRadius ){
       ball.x = matrix.width() + (matrix.width() - 1 - ball.x) ;
-      ball.heading = 0.75 - getSpread();
+      ball.heading = 0.75 - getSpread(1);
   }
 
   // Check for out of x bounds, if so apply score

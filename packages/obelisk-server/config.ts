@@ -12,7 +12,7 @@ const matrixOptions: MatrixOptions | null = config.initPanel ? {
   rows: 16,
   cols: 32,
   chainLength: 4,
-  brightness: 50,
+  brightness: 100,
   rowAddressType: 2,
   multiplexing: 3,
   hardwareMapping: GpioMapping.Regular,
