@@ -87,10 +87,10 @@ function inputLoop(t: number){
   gameState.paddles[0] = Math.round(players[0].y * matrix.height());
 
   let certainty = gameState.ball.x / matrix.width();
-  let motorImprecision = (5 * Math.sin(1 * Math.PI * (t/1000)));
+  let motorImprecision = (2 * Math.sin(1 * Math.PI * (t/1000)));
   gameState.paddles[1] = Math.round(
     ((1-certainty) * (matrix.height()/2)) + //Start with the middle
-    (certainty * (gameState.ball.y)) // Where we're aiming for, with motor imprecision
+    (certainty * (gameState.ball.y + motorImprecision)) // Where we're aiming for, with motor imprecision
   );
 }
 
