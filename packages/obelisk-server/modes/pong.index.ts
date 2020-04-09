@@ -86,12 +86,12 @@ function inputLoop(t: number){
   // Did paddles change? Should we receive input?
   gameState.paddles[0] = Math.round(players[0].y * matrix.height());
 
+  let certainty = gameState.ball.x / matrix.width();
+  let motorImprecision = (5 * Math.sin(1 * Math.PI * (t/1000)));
   gameState.paddles[1] = Math.round(
-    // gameState.ball.y +  //Start with the ball state
-    (5 * Math.sin(1 * Math.PI * (t/1000))) // Motor function imprecision: Add a fudging, sinusidal 5 pixels every second
+    ((1-certainty) * (matrix.height()/2)) + //Start with the middle
+    (certainty * (gameState.ball.y + motorImprecision)) // Where we're aiming for, with motor imprecision
   );
-  gameState.paddles[1] - gameState.ball.y;
-   // + // Spread: 5px, Freq: 0.5
 }
 
 function tick() {
