@@ -36,6 +36,10 @@ if (config.runServer){
     console.log("Connected to socket, assigning player", state.players.length);
     socket.emit('obeliskAssignUser', state.players.length);
 
+    // Immediately launch into pong
+    changeMode('pong');
+    socket.emit('obeliskInitController', 'pong');
+
     socket.on('changeMode', (data) => {
       config.verbose ? console.log('Recieved request to change mode to', data) : 0;
       changeMode(data);
