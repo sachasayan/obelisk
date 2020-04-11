@@ -1,5 +1,6 @@
 // LED Matrix
 import { LedMatrix } from 'rpi-led-matrix';
+import { LedMatrixInstance } from 'rpi-led-matrix/dist/types';
 import { Billboard, Lightcycles, Munchman, Pong, Pulse, Space, Sunlight, Test } from './modes';
 
 // Config
@@ -7,16 +8,18 @@ import { config, matrixOptions, runtimeOptions } from './config';
 import { CliMode } from './types';
 
 let server: any = {};
-let activeMode: {init, deactivate} | null;
-let matrix;
-let players = [];
-let playerData: {y: number}[] = [{y: 0}];
+interface ObeliskState {
+  matrix: LedMatrixInstance;
+  activeMode: {init, deactivate} | null;
+  sockets: any[],
+  playerData: {y: number}[];
+}
 
-let state = {
-  matrix: matrix,
+let state: ObeliskState  = {
+  matrix: undefined,
   activeMode: null,
-  players: players,
-  playerData: playerData
+  sockets: [],
+  playerData: [{y: 0}]
 };
 
 let socketOptions = {
@@ -37,9 +40,9 @@ if (config.runServer){
     server.dyndns = new DynDNSClient(dyndnsConfig);
   }
   let onConnection = (socket) => {
-    state.players.push(socket);
-    console.log("Connected to socket, assigning player", state.players.length);
-    socket.emit('obeliskAssignUser', state.players.length);
+    state.sockets.push(socket)
+    console.log("Connected to socket, assigning player", state.sockets.indexOf(socket));
+    socket.emit('obeliskAssignUser', state.sockets.indexOf(socket));
 
     // Immediately launch into pong
     //changeMode('pong');
@@ -59,8 +62,9 @@ if (config.runServer){
     });
     socket.on('disconnect', (reason) => {
       console.log('Got a disconnect...', reason);
-      state.players = state.players.filter(s => s.id != socket.id );
-      state.players.forEach((s, i) => s.emit('obeliskAssignUser',  i+1));
+      state.sockets.splice(state.sockets.indexOf(socket),1);
+      state.playerData.splice(state.sockets.indexOf(socket), 1);
+      state.sockets.forEach((s, i) => s.emit('obeliskAssignUser',  i));
     });
   };
   server.io.on('connection', onConnection);

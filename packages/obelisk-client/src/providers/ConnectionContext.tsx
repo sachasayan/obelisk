@@ -36,7 +36,7 @@ export function ConnectProvider({children}: IProps) {
 
   const connectionState: ConnectionState = {
     socket: undefined,
-    user: 0,
+    user: -1,
     setUser: setUser
   };
 
