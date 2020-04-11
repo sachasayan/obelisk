@@ -41,7 +41,7 @@ let asyncs = {
   timeouts: []
 };
 let matrix: any;
-let players: any;
+let playerData: any;
 let font;
 
 function resetBall() {
@@ -86,10 +86,9 @@ function incrementScore(player: number){
 }
 
 function inputLoop(t: number){
-  // Did paddles change? Should we receive input?
   gameState.paddles.forEach((p, i) => {
-    if (players[i]) {
-      gameState.paddles[i] = Math.round(players[i].y * matrix.height())
+    if (playerData[i]) {
+      gameState.paddles[i] = Math.round(playerData[i].y * matrix.height());
     } else {
       let certainty = gameState.ball.x / (i == 0 ? 0 : matrix.width());
       let motorImprecision = (3 * Math.sin( Math.PI * (t/1000)));
@@ -193,7 +192,7 @@ function gameLoop(){
 }
 
 function init (state){
-    players = state.playerData;
+    playerData = state.playerData;
     matrix = state.matrix;
     matrix.clear();
 

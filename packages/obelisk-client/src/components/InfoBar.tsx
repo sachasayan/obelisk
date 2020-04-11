@@ -27,7 +27,7 @@ function InfoBar() {
             <ViewWeekIcon />
           <Typography variant="h6" color="inherit">
             <SportsEsportsIcon />
-            {socket ? socket.user >= 0 ? socket.user : '' : ''}
+            {socket ? socket.user >= 0 ? socket.user + 1 : '' : ''}
           </Typography>
         </Grid>
       </Toolbar>
