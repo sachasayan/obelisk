@@ -89,7 +89,7 @@ function inputLoop(t: number){
   // Did paddles change? Should we receive input?
   gameState.paddles.forEach((p, i) => {
     if (players[i]) {
-      gameState.paddles[0] = Math.round(players[0].y * matrix.height())
+      gameState.paddles[i] = Math.round(players[i].y * matrix.height())
     } else {
       let certainty = gameState.ball.x / (i == 0 ? 0 : matrix.width());
       let motorImprecision = (3 * Math.sin( Math.PI * (t/1000)));
