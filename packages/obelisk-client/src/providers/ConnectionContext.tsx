@@ -18,7 +18,7 @@ export function ConnectProvider({children}: IProps) {
     console.log('Setting user..', u);
     updateConnection(prevState => {
       // Let the user know if they've been reassigned a slot due to someone dropping out.
-      if (prevState.user != 0 && prevState.user != u) { alert("You've been reassigned as player " + u); }
+      // if (prevState.user != 0 && prevState.user != u) { alert("You've been reassigned as player " + u); }
       return {
         ...prevState,
         user: u
