@@ -19,20 +19,25 @@ let state = {
   playerData: playerData
 };
 
+let socketOptions = {
+  pingTimeout: 1000,
+  pingInterval: 1000
+};
+
 if (config.runServer){
   let express = require('express');
   let DynDNSClient = require('node-dyndns-client');
 
   server.app = express();
   server.http = require('http').Server(server.app);
-  server.io = require('socket.io')(server.http);
+  server.io = require('socket.io')(server.http, socketOptions);
   server.port = process.env.PORT || 80;
   if (config.initPanel){
     let dyndnsConfig = require('./dyndnsconfig.json');
     server.dyndns = new DynDNSClient(dyndnsConfig);
   }
   let onConnection = (socket) => {
-    state.players = [socket];
+    state.players.push(socket);
     console.log("Connected to socket, assigning player", state.players.length);
     socket.emit('obeliskAssignUser', state.players.length);
 
@@ -52,6 +57,7 @@ if (config.runServer){
       state.playerData[0] = {y: data.y};
     });
     socket.on('disconnect', (reason) => {
+      console.log('Got a disconnect...', reason);
       state.players = state.players.filter(s => s.id != socket.id );
       state.players.forEach((s, i) => s.emit('obeliskAssignUser',  i+1));
     });

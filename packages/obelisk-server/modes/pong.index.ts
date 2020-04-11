@@ -87,14 +87,18 @@ function incrementScore(player: number){
 
 function inputLoop(t: number){
   // Did paddles change? Should we receive input?
-  gameState.paddles[0] = Math.round(players[0].y * matrix.height());
-
-  let certainty = gameState.ball.x / matrix.width();
-  let motorImprecision = (3 * Math.sin( Math.PI * (t/1000)));
-  gameState.paddles[1] = Math.round(
-    ((1-certainty) * (matrix.height()/2)) + //Start with the middle
-    (certainty * (gameState.ball.y + motorImprecision)) // Where we're aiming for, with motor imprecision
-  );
+  gameState.paddles.forEach((p, i) => {
+    if (players[i]) {
+      gameState.paddles[0] = Math.round(players[0].y * matrix.height())
+    } else {
+      let certainty = gameState.ball.x / (i == 0 ? 0 : matrix.width());
+      let motorImprecision = (3 * Math.sin( Math.PI * (t/1000)));
+      gameState.paddles[i] = Math.round(
+        ((1-certainty) * (matrix.height()/2)) + //Start with the middle
+        (certainty * (gameState.ball.y + motorImprecision)) // Where we're aiming for, with motor imprecision
+      );
+    }
+  });
 }
 
 function tick() {

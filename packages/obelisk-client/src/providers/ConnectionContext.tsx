@@ -17,6 +17,7 @@ export function ConnectProvider({children}: IProps) {
   const setUser = (u: number)  => {
     console.log('Setting user..', u);
     updateConnection(prevState => {
+      if (prevState.user) { alert("You've been reassigned as player " + u); }
       return {
         ...prevState,
         user: u
@@ -34,7 +35,7 @@ export function ConnectProvider({children}: IProps) {
 
   const connectionState: ConnectionState = {
     socket: undefined,
-    user: 4,
+    user: 0,
     setUser: setUser
   };
 
