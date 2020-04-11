@@ -54,7 +54,7 @@ if (config.runServer){
       }
     });
     socket.on('drawing', (data) => {
-      state.playerData[0] = {y: data.y};
+      state.playerData[data.player] = {y: data.y};
     });
     socket.on('disconnect', (reason) => {
       console.log('Got a disconnect...', reason);
