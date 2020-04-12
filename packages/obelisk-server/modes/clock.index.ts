@@ -35,6 +35,7 @@ function displayGameScreen(){
   const lines = LayoutUtils.textToLines(fonts[0], matrix.width(), String(formattedTime));
 
   matrix
+    .font(fonts[0])
     .brightness(10)
     .fgColor(0x111111)
 
