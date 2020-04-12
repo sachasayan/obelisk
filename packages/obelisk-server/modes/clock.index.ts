@@ -27,25 +27,25 @@ function displayGameScreen(){
     hour12: true
   });
 
-  let alignmentH: HorizontalAlignment = HorizontalAlignment.Center;
-  let alignmentV: VerticalAlignment = VerticalAlignment.Middle;
+  // let alignmentH: HorizontalAlignment = HorizontalAlignment.Center;
+  // let alignmentV: VerticalAlignment = VerticalAlignment.Middle;
 
-  const lines = LayoutUtils.textToLines(fonts[0], matrix.width(), String(formattedTime));
-
-  matrix
-    .font(fonts[0])
-    .brightness(10)
-    .fgColor(0x111111)
-
-  LayoutUtils.linesToMappedGlyphs(lines, fonts[0].height(), matrix.width(), matrix.height(), alignmentH, alignmentV).map(glyph => {
-    matrix.drawText(glyph.char, glyph.x, glyph.y);
-  });
-
+  // const lines = LayoutUtils.textToLines(fonts[0], matrix.width(), String(formattedTime));
 
   // matrix
   //   .font(fonts[0])
+  //   .brightness(10)
   //   .fgColor(0x111111)
-  //   .drawText(String(formattedTime), 2, 0);
+
+  // LayoutUtils.linesToMappedGlyphs(lines, fonts[0].height(), matrix.width(), matrix.height(), alignmentH, alignmentV).map(glyph => {
+  //   matrix.drawText(glyph.char, glyph.x, glyph.y);
+  // });
+
+
+  matrix
+    .font(fonts[0])
+    .fgColor(0x111111)
+    .drawText(String(formattedTime), 2, 0);
 }
 
 function init (state){
