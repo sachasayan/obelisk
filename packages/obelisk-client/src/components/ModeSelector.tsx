@@ -12,6 +12,7 @@ function ModeSelector() {
   let connection: ConnectionState | undefined = useContext(ConnectionContext);
   let modes = [
     'billboard',
+    'clock',
     'lightcycles',
     'munchman',
     'pong',

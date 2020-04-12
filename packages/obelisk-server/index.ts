@@ -1,11 +1,10 @@
 // LED Matrix
 import { LedMatrix } from 'rpi-led-matrix';
 import { LedMatrixInstance } from 'rpi-led-matrix/dist/types';
-import { Billboard, Lightcycles, Munchman, Pong, Pulse, Space, Sunlight, Test } from './modes';
+import { Billboard, Clock, Lightcycles, Munchman, Pong, Pulse, Space, Sunlight, Test } from './modes';
 
 // Config
 import { config, matrixOptions, runtimeOptions } from './config';
-import { CliMode } from './types';
 
 let server: any = {};
 interface ObeliskState {
@@ -77,6 +76,7 @@ let changeMode = (mode: string) => {
   console.log('Changing mode to...', mode);
   let modes = {
     'billboard': Billboard,
+    'clock': Clock,
     'lightcycles': Lightcycles,
     'munchman': Munchman,
     'pong': Pong,
