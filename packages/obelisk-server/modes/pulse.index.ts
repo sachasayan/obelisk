@@ -7,7 +7,7 @@ class Pulser {
   ) { }
 
   getBrightness(t: number) {
-    const s = 10;
+    const s = 30;
     const z = 0.3;
     const brightness =  255 * Math.max(0, (s+1) * Math.sin( z* ((t / 1000) + (this.offset * 1000)) ) - s);
 
