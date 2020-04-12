@@ -29,7 +29,7 @@ function displayGameScreen(){
   matrix
     .font(fonts[0])
     .fgColor(0x333333)
-    .drawText(String(formattedTime), 2, 10);
+    .drawText(String(formattedTime), 2, 0);
 }
 
 function init (state){
@@ -43,9 +43,9 @@ function init (state){
     matrix.afterSync((mat, dt, t) => {
       matrix.clear();
       displayGameScreen();
-      matrix.sync();
       asyncs.timeouts.push(setTimeout(() => matrix.sync(), 0));
     });
+    matrix.sync();
 
     asyncs.timeouts.push(setTimeout(tick, 1000));
 
