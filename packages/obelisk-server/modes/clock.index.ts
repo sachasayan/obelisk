@@ -28,7 +28,7 @@ function displayGameScreen(){
 
   matrix
     .font(fonts[0])
-    .fgColor(0x333333)
+    .fgColor(0x111111)
     .drawText(String(formattedTime), 2, 0);
 }
 
