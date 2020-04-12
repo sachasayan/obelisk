@@ -53,18 +53,20 @@ function init (state){
     matrix.clear();
 
     fonts = [
-      new Font('tom-thumb', `${process.cwd()}/fonts/tom-thumb.bdf`),
       new Font('helvR12', `${process.cwd()}/fonts/helvR12.bdf`)
+      // new Font('tom-thumb', `${process.cwd()}/fonts/tom-thumb.bdf`),
     ];
 
     matrix.afterSync((mat, dt, t) => {
 
       displayGameScreen();
-      asyncs.timeouts.push(setTimeout(() => matrix.sync(), 1000));
+      asyncs.timeouts.push(setTimeout(() => matrix.sync(), 0));
     });
-    matrix.sync();
 
-    // asyncs.timeouts.push(setTimeout(tick, 1000));
+
+
+
+    asyncs.timeouts.push(setTimeout(()=>{ matrix.sync(); }, 1000));
 
 
 }
