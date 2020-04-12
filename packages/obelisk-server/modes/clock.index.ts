@@ -1,7 +1,10 @@
 import * as Jimp from 'jimp';
 
 import {
-  Font
+  Font,
+  LayoutUtils,
+  HorizontalAlignment,
+  VerticalAlignment,
 } from 'rpi-led-matrix';
 
 let asyncs = {
@@ -26,10 +29,24 @@ function displayGameScreen(){
     hour12: true
   });
 
+  let alignmentH: HorizontalAlignment = HorizontalAlignment.Center;
+  let alignmentV: VerticalAlignment = VerticalAlignment.Middle;
+
+  const lines = LayoutUtils.textToLines(fonts[0], matrix.width(), String(formattedTime));
+
   matrix
-    .font(fonts[0])
+    .brightness(10)
     .fgColor(0x111111)
-    .drawText(String(formattedTime), 2, 0);
+
+  LayoutUtils.linesToMappedGlyphs(lines, fonts[0].height(), matrix.width(), matrix.height(), alignmentH, alignmentV).map(glyph => {
+    matrix.drawText(glyph.char, glyph.x, glyph.y);
+  });
+
+
+  // matrix
+  //   .font(fonts[0])
+  //   .fgColor(0x111111)
+  //   .drawText(String(formattedTime), 2, 0);
 }
 
 function init (state){
@@ -37,6 +54,7 @@ function init (state){
     matrix.clear();
 
     fonts = [
+      new Font('tomthumb', `${process.cwd()}/fonts/tom-thumb.bdf`),
       new Font('helvR12', `${process.cwd()}/fonts/helvR12.bdf`)
     ];
 
