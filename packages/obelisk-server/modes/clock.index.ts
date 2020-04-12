@@ -53,8 +53,8 @@ function init (state){
     matrix.clear();
 
     fonts = [
-      new Font('helvR12', `${process.cwd()}/fonts/helvR12.bdf`)
-      // new Font('tom-thumb', `${process.cwd()}/fonts/tom-thumb.bdf`),
+      new Font('tom-thumb', `${process.cwd()}/fonts/tom-thumb.bdf`)
+      // new Font('helvR12', `${process.cwd()}/fonts/helvR12.bdf`)
     ];
 
     matrix.afterSync((mat, dt, t) => {
