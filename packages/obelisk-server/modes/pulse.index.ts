@@ -3,15 +3,21 @@ class Pulser {
   constructor(
     readonly x: number,
     readonly y: number,
-    readonly f: number
+    readonly offset: number
   ) { }
 
-  nextColor(t: number): number {
-    /** You could easily work position-dependent logic into this expression */
-    const brightness = 0xFF & Math.max(0, 255 * (Math.sin(this.f * t / 1000)));
+  getBrightness(t: number) {
+    const brightness =  255 * Math.max(0, Math.sin(this.offset * t / 1000));
 
-    return (brightness << 16) | (brightness << 8) | brightness;
+    return{r: brightness, g: brightness, b: brightness};
   }
+
+  // nextColor(t: number): number {
+  //   /** You could easily work position-dependent logic into this expression */
+  //   const brightness = 0xFF & Math.max(0, 255 * (Math.sin(this.f * t / 1000)));
+
+  //   return (brightness << 16) | (brightness << 8) | brightness;
+  // }
 }
 
 
@@ -28,7 +34,7 @@ function init(state) {
   }
   matrix.afterSync((mat, dt, t) => {
     pulsers.forEach(pulser => {
-      matrix.fgColor(pulser.nextColor(t)).setPixel(pulser.x, pulser.y);
+      matrix.fgColor(pulser.getBrightness(t)).setPixel(pulser.x, pulser.y);
     });
 
     setTimeout(() => matrix.sync(), 0);
