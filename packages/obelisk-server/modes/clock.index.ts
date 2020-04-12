@@ -1,5 +1,3 @@
-import * as Jimp from 'jimp';
-
 import {
   Font,
   LayoutUtils,
@@ -14,12 +12,12 @@ let asyncs = {
 let matrix: any;
 let fonts;
 
-let tick = () => {
-  asyncs.timeouts.push(setTimeout(tick, 1000));
-}
+// let tick = () => {
+//   asyncs.timeouts.push(setTimeout(tick, 1000));
+// }
 
 function displayGameScreen(){
-
+  matrix.clear();
   let time = new Date();
   let formattedTime = time.toLocaleString('en-US', {
     timeZone: 'America/Toronto',
@@ -55,18 +53,18 @@ function init (state){
     matrix.clear();
 
     fonts = [
-      new Font('tomthumb', `${process.cwd()}/fonts/tom-thumb.bdf`),
+      new Font('tom-thumb', `${process.cwd()}/fonts/tom-thumb.bdf`),
       new Font('helvR12', `${process.cwd()}/fonts/helvR12.bdf`)
     ];
 
     matrix.afterSync((mat, dt, t) => {
-      matrix.clear();
+
       displayGameScreen();
-      asyncs.timeouts.push(setTimeout(() => matrix.sync(), 0));
+      asyncs.timeouts.push(setTimeout(() => matrix.sync(), 1000));
     });
     matrix.sync();
 
-    asyncs.timeouts.push(setTimeout(tick, 1000));
+    // asyncs.timeouts.push(setTimeout(tick, 1000));
 
 
 }
