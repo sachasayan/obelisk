@@ -16,7 +16,11 @@ let asyncs = {
 let matrix: any;
 let fonts = [];
 
-function displayTick(){
+// let tick = () => {
+//   asyncs.timeouts.push(setTimeout(tick, 1000));
+// }
+
+function displayClock(){
   matrix.clear();
   let time = new Date();
   let formattedTime = time.toLocaleString('en-US', {
@@ -43,7 +47,7 @@ function init (state){
     ];
 
     matrix.afterSync((mat, dt, t) => {
-      displayTick();
+      displayClock();
       asyncs.timeouts.push(setTimeout(() => { matrix.sync(); }, 1000));
     });
 
@@ -59,8 +63,8 @@ function deactivate() {
   asyncs.timeouts.map(e => clearTimeout(e));
 }
 
-let Clock = { init, deactivate };
+let DripClock = { init, deactivate };
 
-export { Clock };
+export { DripClock };
 
 
