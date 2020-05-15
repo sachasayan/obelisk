@@ -67,6 +67,15 @@ On a Raspberry Pi, you'll want to do most of this manually.
 
 The RPi uses the same high-frequency hardware (called a pulse generator) to drive the board as it does to generate sound. As a result, you actually cannot use sound functionality at the same time as driving a board, and it must be disabled. See HZeller's Github for advice on how to achieve this. 
 
+#### Install Git
+
+Raspbian comes with Apt, so this is as simple as
+
+```
+apt-get git
+```
+
+
 #### Install NVM
 
 https://github.com/nvm-sh/nvm#installing-and-updating
@@ -74,6 +83,9 @@ https://github.com/nvm-sh/nvm#installing-and-updating
 ```
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
 ```
+
+You'll need to `ln -s` nvm to the proper directory as well.
+
 
 
 #### Install Yarn 
