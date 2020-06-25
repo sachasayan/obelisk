@@ -43,10 +43,6 @@ if (config.runServer){
     console.log("Connected to socket, assigning player", state.sockets.indexOf(socket));
     socket.emit('obeliskAssignUser', state.sockets.indexOf(socket));
 
-    // Immediately launch into pong
-    //changeMode('pong');
-    //socket.emit('obeliskInitController', 'pong');
-
     socket.on('changeMode', (data) => {
       config.verbose ? console.log('Recieved request to change mode to', data) : 0;
       changeMode(data);
@@ -106,6 +102,7 @@ if (config.initPanel) {
     try {
       state.matrix = new LedMatrix(matrixOptions, runtimeOptions);
       state.matrix.clear();
+      changeMode('clock');     // Immediately launch into clock
     }
     catch (error) {
       console.error(`${__filename} caught: `, error);
