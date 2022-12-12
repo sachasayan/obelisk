@@ -20,7 +20,7 @@
   "dependencies": {
     "@types/node": "^13.7.2",
     "chroma-js": "^2.1.0",
-    "express": "4.9.x",
+    "express": "4.17.x",
     "jimp": "^0.9.3",
     "node-dyndns-client": "^0.2.3",
     "prompts": "^2.3.1",
