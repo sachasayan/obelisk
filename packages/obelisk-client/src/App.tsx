@@ -1,38 +1,25 @@
-import React from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './App.css';
-
-import { ConnectProvider } from './providers/ConnectionContext';
-
-import ModeSelector from './components/ModeSelector';
-import InfoBar from './components/InfoBar';
 import Controller from './components/Controller';
-
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  Link
-} from 'react-router-dom';
+import InfoBar from './components/InfoBar';
+import ModeSelector from './components/ModeSelector';
+import { ConnectProvider } from './providers/ConnectionContext';
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <ConnectProvider>
         <div className="App">
           <header className="App-header">
-            <InfoBar/>
+            <InfoBar />
           </header>
-          <Switch>
-            <Route exact path="/">
-              <ModeSelector/>
-            </Route>
-            <Route path="/controller">
-              <Controller/>
-            </Route>
-          </Switch>
+          <Routes>
+            <Route path="/" element={<ModeSelector />} />
+            <Route path="/controller" element={<Controller />} />
+          </Routes>
         </div>
       </ConnectProvider>
-    </Router>
+    </BrowserRouter>
   );
 }
 

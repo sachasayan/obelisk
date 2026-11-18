@@ -1,110 +1,70 @@
-import * as Jimp from 'jimp';
+import { join } from 'node:path';
+import type { PNG } from 'pngjs';
+import { Font } from 'rpi-led-matrix';
+import type { LedMatrixInstance } from 'rpi-led-matrix';
+import { forEachOpaquePixel, readPng } from '../png';
+import { fetchArrivalMinutes } from '../ttc';
 
-import {
-  Font
-} from 'rpi-led-matrix';
-const http = require('http');
+let stop = () => {};
 
-let asyncs = {
-  intervals: [],
-  timeouts: []
-};
-let matrix: any;
-let fonts;
-let nextbusInfo = '';
-let streetcar;
+function init({ matrix }: { matrix: LedMatrixInstance }) {
+  const activation = new AbortController();
+  const { signal } = activation;
+  const clockFont = new Font('helvR12', join(__dirname, '../fonts/helvR12.bdf'));
+  const arrivalFont = new Font('5x7', join(__dirname, '../fonts/5x7.bdf'));
+  let image: PNG | undefined;
+  let minutes: number | undefined;
+  let frameTimer: NodeJS.Timeout | undefined;
+  let updateTimer: NodeJS.Timeout | undefined;
 
+  async function updateArrival() {
+    try {
+      const requestSignal = AbortSignal.any([signal, AbortSignal.timeout(8000)]);
+      minutes = await fetchArrivalMinutes(requestSignal);
+    } catch (error) {
+      minutes = undefined;
+      if (!signal.aborted) console.warn('Could not read TTC arrivals:', error);
+    }
 
-let tick = () => {
-  http.get('http://webservices.nextbus.com/service/publicJSONFeed?command=predictions&a=ttc&stopId=0816', (resp) => {
-    let data = '';
-
-    // A chunk of data has been recieved.
-    resp.on('data', (chunk) => {
-      data += chunk;
-    });
-
-    // The whole response has been received. Print out the result.
-    resp.on('end', () => {
-      let departuresByRoute = JSON
-                    .parse(data).predictions
-                    .filter(route => !!route.direction && !!route.direction.prediction);
-      nextbusInfo = departuresByRoute.length > 0 ? departuresByRoute[0].direction.prediction[0].minutes : null;
-    });
-  });
-  asyncs.timeouts.push(setTimeout(tick, 60*1000));
-}
-
-function displayGameScreen(){
-
-  let time = new Date();
-  let formattedTime = time.toLocaleString('en-US', { timeZone: 'America/Toronto', hour: 'numeric', minute: 'numeric', hour12: true });
-
-  matrix
-    .font(fonts[0])
-    .fgColor(0x333333)
-    .drawText(String(formattedTime), 2, 0);
-
-  if(streetcar){
-    streetcar.scan(0, 0, streetcar.bitmap.width, streetcar.bitmap.height, function(x, y, idx) {
-      let pc = streetcar.getPixelColor(x, y);
-      if (pc % 256 == 255) {
-        matrix
-          .fgColor( (pc - (pc % 256)) / 256)
-          .setPixel(
-            x + (108 - 12),
-            y + 5
-          );
-      }
-    });
+    if (!signal.aborted) updateTimer = setTimeout(updateArrival, 60_000);
   }
 
-  matrix
-    .font(fonts[1])
-    .fgColor(0x222222)
-    .drawText(String(nextbusInfo) + 'm', 110, 5);
-}
+  stop = () => {
+    activation.abort();
+    clearTimeout(frameTimer);
+    clearTimeout(updateTimer);
+  };
 
-function init (state){
-    matrix = state.matrix;
-    matrix.clear();
+  matrix.afterSync(() => {
+    if (signal.aborted) return;
 
-    fonts = [
-      new Font('helvR12', `${process.cwd()}/fonts/helvR12.bdf`),
-      new Font('5x7', `${process.cwd()}/fonts/5x7.bdf`)
-    ];
-    //const lines = LayoutUtils.textToLines(font, matrix.width(), 'Hello, matrix!');
-
-
-
-    matrix.afterSync((mat, dt, t) => {
-      matrix.clear();
-
-      displayGameScreen();
-
-      setTimeout(() => matrix.sync(), 0);
+    const time = new Date().toLocaleString('en-US', {
+      timeZone: 'America/Toronto',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true,
     });
+    matrix.clear().font(clockFont).fgColor(0x333333).drawText(time, 2, 0);
+    if (image) {
+      forEachOpaquePixel(image, (x, y, color) => {
+        matrix.fgColor(color).setPixel(x + 96, y + 5);
+      });
+    }
+    const arrival = minutes === undefined ? '--' : `${minutes}m`;
+    matrix.font(arrivalFont).fgColor(0x222222).drawText(arrival, 110, 5);
+    frameTimer = setTimeout(() => matrix.sync(), 1000);
+  });
 
-
-    Jimp.read('./images/streetcar.png')
-    .then(img => {
-      streetcar = img;
-      matrix.sync();
-      asyncs.timeouts.push(setTimeout(tick, 1000));
-    })
-    .catch(err => {
-      console.error(err);
-    });
-
+  readPng('streetcar.png')
+    .then((streetcar) => { image = streetcar; })
+    .catch((error) => console.error('Could not read the streetcar image:', error));
+  void updateArrival();
+  matrix.sync();
 }
 
-function deactivate() {
-  asyncs.intervals.map(e => clearInterval(e));
-  asyncs.timeouts.map(e => clearTimeout(e));
-}
-
-let Billboard = { init, deactivate };
-
-export { Billboard };
-
-
+export const Billboard = {
+  init,
+  deactivate() {
+    stop();
+  },
+};

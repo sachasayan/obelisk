@@ -1,5 +1,5 @@
-import * as chroma from 'chroma-js';
-import * as Jimp from 'jimp';
+import chroma from 'chroma-js';
+import { readPng } from '../png';
 
 import {
   BASE_COLORS,
@@ -186,21 +186,27 @@ function gameLoop(t: number){
 //////////////////////
 
 
+let activation = 0;
+let detachInput: (() => void) | undefined;
+
 function init (state){
-  matrix = state.matrix;
   deactivate();
+  matrix = state.matrix;
+  const currentActivation = activation;
     // Load level
 
-    Jimp.read('./images/munch-lvl.png')
+    readPng('munch-lvl.png')
     .then(img => {
-        img.scan(0, 0, img.bitmap.width, img.bitmap.height, function(x, y, idx) {
-          gameSettings.grid += MAP_LOOKUP[chroma({
-            r : img.bitmap.data[idx + 0],
-            g : img.bitmap.data[idx + 1],
-            b : img.bitmap.data[idx + 2]
-          }).hex()];
-          if (x == 127) { gameSettings.grid += '\n'; };
-        });
+        if (currentActivation !== activation) return;
+
+        gameSettings.grid = '';
+        for (let y = 0; y < img.height; y++) {
+          for (let x = 0; x < img.width; x++) {
+            const offset = (y * img.width + x) * 4;
+            gameSettings.grid += MAP_LOOKUP[chroma(img.data.readUIntBE(offset, 3)).hex()];
+          }
+          gameSettings.grid += '\n';
+        }
         resetGame();
         asyncs.timeouts.push(setTimeout(handlePlayerMovement, 2000));
         asyncs.timeouts.push(setTimeout(handleGhostMovement, 2000));
@@ -218,22 +224,37 @@ function init (state){
       console.error(err);
     });
 
-    // Set inputs
-    var stdin = process.stdin;
-    stdin.setRawMode( true ); // without this, we would only get streams once enter is pressed
-    stdin.resume();
-    stdin.setEncoding( 'utf8' ); // i don't want binary, do you?
-    stdin.on( 'data', ( key: string ) => {
-      if ( key === '\u0003' ) { process.exit();} // ctrl-c ( end of text )
-      if ( key === 'x' ) { stdin.pause(); stdin.setRawMode( false ); }
-      if ( 'wasd'.includes(key) ) { gameState.inputs.push(key); }
-      process.stdout.write( key );       // write the key to stdout all normal like
-    });
+    const stdin = process.stdin;
+    if (stdin.isTTY) {
+      const wasRaw = stdin.isRaw;
+      const wasFlowing = stdin.readableFlowing;
+      function handleInput(bytes: Buffer | string) {
+        const key = bytes.toString();
+        if (key === '\u0003') process.exit();
+        if (key === 'x') detachInput?.();
+        if ('wasd'.includes(key)) gameState.inputs.push(key);
+        process.stdout.write(key);
+      }
+
+      stdin.setRawMode(true);
+      stdin.on('data', handleInput);
+      stdin.resume();
+      detachInput = () => {
+        stdin.off('data', handleInput);
+        stdin.setRawMode(wasRaw);
+        if (!wasFlowing) stdin.pause();
+        detachInput = undefined;
+      };
+    }
 }
 
 function deactivate() {
-  asyncs.intervals.map(e => clearInterval(e));
-  asyncs.timeouts.map(e => clearTimeout(e));
+  activation++;
+  detachInput?.();
+  asyncs.intervals.forEach(clearInterval);
+  asyncs.timeouts.forEach(clearTimeout);
+  asyncs.intervals.length = 0;
+  asyncs.timeouts.length = 0;
 }
 
 

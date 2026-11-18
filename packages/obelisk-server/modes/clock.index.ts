@@ -8,10 +8,7 @@ import {
 const alignmentH: HorizontalAlignment = HorizontalAlignment.Center;
 const alignmentV: VerticalAlignment = VerticalAlignment.Middle;
 
-let asyncs = {
-  intervals: [],
-  timeouts: []
-};
+let frameTimer: NodeJS.Timeout;
 
 let matrix: any;
 let fonts = [];
@@ -44,7 +41,7 @@ function init (state){
 
     matrix.afterSync((mat, dt, t) => {
       displayTick();
-      asyncs.timeouts.push(setTimeout(() => { matrix.sync(); }, 1000));
+      frameTimer = setTimeout(() => matrix.sync(), 1000);
     });
 
     matrix
@@ -55,8 +52,7 @@ function init (state){
 }
 
 function deactivate() {
-  asyncs.intervals.map(e => clearInterval(e));
-  asyncs.timeouts.map(e => clearTimeout(e));
+  clearTimeout(frameTimer);
 }
 
 let Clock = { init, deactivate };

@@ -1,7 +1,8 @@
-import * as Jimp from 'jimp';
-import * as chroma from 'chroma-js';
+import { forEachOpaquePixel, readPng } from '../png';
+import chroma from 'chroma-js';
 
 let matrix;
+let stop = () => {};
 
 
 const palette = chroma.scale([0xFFFFFF, 0x111111]);
@@ -32,6 +33,13 @@ function init (state){
     matrix = state.matrix;
     matrix.clear();
 
+    const activation = new AbortController();
+    let frameTimer: NodeJS.Timeout;
+    stop = () => {
+      activation.abort();
+      clearTimeout(frameTimer);
+    };
+
     let rocket;
     const starfield: Star[] = [];
 
@@ -40,6 +48,8 @@ function init (state){
     }
 
     matrix.afterSync((mat, dt, t) => {
+      if (activation.signal.aborted) return;
+
       matrix
       .clear();
 
@@ -51,31 +61,22 @@ function init (state){
       });
 
       if(rocket){
-        rocket.scan(0, 0, rocket.bitmap.width, rocket.bitmap.height, function(x, y, idx) {
-          let pc = rocket.getPixelColor(x, y);
-          if (pc % 256 == 255) {
-            matrix
-              .fgColor( (pc - (pc % 256)) / 256)
-              .setPixel(
-                x +
-                  (64 - 8) +
-                  Math.round(5 * Math.sin(0.5 * Math.PI * (t/1000))), // + // Spread: 5px, Freq: 0.5
-                y +
-                  1 +
-                  Math.round(1 * Math.sin(2 * Math.PI * (t/1000))) // Freq: 2/s, Spread: 3px
-              );
-          }
+        forEachOpaquePixel(rocket, (x, y, color) => {
+          matrix.fgColor(color).setPixel(
+            x + (64 - 8) + Math.round(5 * Math.sin(0.5 * Math.PI * (t / 1000))),
+            y + 1 + Math.round(1 * Math.sin(2 * Math.PI * (t / 1000))),
+          );
         });
       }
 
-      setTimeout(() => matrix.sync(), 40);
+      frameTimer = setTimeout(() => matrix.sync(), 40);
     });
 
 
-    Jimp.read('./images/spaceship.png')
+    readPng('spaceship.png')
       .then(img => {
         rocket = img;
-        matrix.sync();
+        if (!activation.signal.aborted) matrix.sync();
       })
       .catch(err => {
         console.error(err);
@@ -84,6 +85,7 @@ function init (state){
 }
 
 function deactivate() {
+  stop();
 }
 
 let Space = { init, deactivate };

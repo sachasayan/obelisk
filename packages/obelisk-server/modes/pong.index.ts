@@ -88,9 +88,10 @@ function incrementScore(player: number){
 function inputLoop(t: number){
   gameState.paddles.forEach((p, i) => {
     if (playerData[i]) {
-      gameState.paddles[i] = Math.round(playerData[i].y * matrix.height());
+      gameState.paddles[i] = Math.round(playerData[i].y * (matrix.height() - 1));
     } else {
-      let certainty = gameState.ball.x / (i == 0 ? 0 : matrix.width());
+      const progress = Math.min(1, Math.max(0, gameState.ball.x / Math.max(1, matrix.width() - 1)));
+      const certainty = i === 0 ? 1 - progress : progress;
       let motorImprecision = (3 * Math.sin( Math.PI * (t/1000)));
       gameState.paddles[i] = Math.round(
         ((1-certainty) * (matrix.height()/2)) + //Start with the middle

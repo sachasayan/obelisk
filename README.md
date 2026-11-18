@@ -52,97 +52,53 @@ These panels are essentially 'raw' LEDs with no intelligence behind them. You ne
 
 You also need an adaptor for the GPIO pins on your Raspberry Pi to match the common 16-pin IDC format used by these kinds of LED panels. I recommend [this one made by ElectroDragon](https://www.electrodragon.com/product/rgb-matrix-panel-drive-board-raspberry-pi/), based of Henner Zeller's schematics. There are also some other panels schematics available in [his GitHub repo](https://github.com/hzeller/rpi-rgb-led-matrix) to address other specific needs. I'll also soon be offering passive panels of my own design for sale, by mail, which you'll need minimal soldering experience to make work for you. 
 
-## Getting all set up with the software
+## Run locally
 
- You'll need:
- 
-- **Git**, used to pull the project code. 
-- **GCC**, to compile hzeller's original code, which this project draws from. 
-- **NVM + Node** as the best way to get sudo-less Node code running on an RPi
-- **Yarn** is used to manage the workspaces (server + client) of the project. 
+Use Node.js 24.22.3 or later in the 24.x series, or Node.js 26.x, with npm 11.
+Run these commands from the repository root to build the browser controller and
+start the server without LED hardware.
 
-On a Raspberry Pi, you'll want to do most of this manually. 
-
-#### Disable sound
-
-The RPi uses the same high-frequency hardware (called a pulse generator) to drive the board as it does to generate sound. As a result, you actually cannot use sound functionality at the same time as driving a board, and it must be disabled. See HZeller's Github for advice on how to achieve this. 
-
-#### Install Git
-
-Raspbian comes with Apt, so this is as simple as
-
-```
-apt-get git
+```sh
+npm ci --ignore-scripts
+npm run clientbuild
+npm run obelisk
 ```
 
+Open <http://127.0.0.1:3001>. Choose Pong to open the touch controller. For
+frontend development, leave the server running and run `npm run clientstart` in
+a second terminal. Vite prints its browser URL and forwards Socket.IO traffic
+to the server. If you use a different server port, set `OBELISK_PROXY_TARGET`
+to the server URL when starting Vite.
 
-#### Install NVM
+Run `npm run check` to type-check both workspaces, build the client, and run the
+client and server tests.
 
-https://github.com/nvm-sh/nvm#installing-and-updating
+## Run with an LED panel
 
-```
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
-```
+Use a Raspberry Pi running 64-bit Raspberry Pi OS with a compatible GPIO
+adapter, `build-essential`, `python3`, and the Node.js and npm versions above. Follow the upstream LED matrix project's [Raspberry Pi setup
+instructions](https://github.com/hzeller/rpi-rgb-led-matrix#troubleshooting) for
+your board and wiring. The matrix driver and onboard sound can contend for the
+same hardware peripheral.
 
-You'll need to `ln -s` nvm to the proper directory as well.
+1. Install with `npm ci --ignore-scripts` and compile the native dependency
+   with `npm rebuild rpi-led-matrix`.
+2. Set `initPanel: true` in `packages/obelisk-server/config.ts`. Review its
+   matrix options and match the panel geometry, GPIO mapping, and brightness
+   to your hardware. `config.example.ts` shows the same settings with a lower
+   starting brightness.
+3. Run `npm run clientbuild`, then `npm run obelisk`. The server starts the
+   Clock mode when the panel is enabled.
 
+The server listens on `127.0.0.1:3001` by default. To use a phone on your local
+network, run `HOST=0.0.0.0 npm run obelisk` and open the Pi's IP address on port
+3001. Use `PORT` to choose a different port. Deploy the browser build and
+server together because both now use Socket.IO 4. Panel controls are unauthenticated.
+Keep the service on a trusted network and preserve the original Host header
+if you use a reverse proxy.
 
-
-#### Install Yarn 
-
-https://classic.yarnpkg.com/en/docs/install#debian-stable
-
-```
-curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-sudo apt update && sudo apt install --no-install-recommends yarn
-```
-
-#### Get Packages
-
-With the terminal, `cd` into your `obelisk` directory and run: 
-
-```
-yarn
-```
-
-#### Configuration
-
-First, you'll need to configure your panel by copying `obelisk-server/config.example.ts` to `obelisk-server/config.ts`. I would recommend reading through [Henner Zeller](https://github.com/hzeller/rpi-rgb-led-matrix) and [Alexander Eden](https://github.com/alexeden/rpi-led-matrix)'s repos to understand what all the settings do — the documentation is quite comprehensive, and they've both done a wonderful job with their explanations. 
-
-For this project in particular, you'll want to pay attention to: 
-
-```
-let config = {
-  verbose: true,
-  runServer: true,
-  initPanel: false
-};
-```
-
-- Verbose turns on logging for the server. Otherwise, logs will be mininally displayed via a dashboard. 
-- There's no reason to 'runServer' if you won't be internet connected. If 'runServer' is false, you'll be able to choose options via the CLI instead of waiting for a phone to connect. 
-- You won't be able to run in full mode, panel enabled, on your development machine. For this, you'll need to make sure `initPanel` is set to `false`. 
-
-## Getting running with the Sample Project
-
-
-You can then run the server: 
-
-```
-yarn obelisk
-```
-
-Running the client for development: 
-
-```
-yarn workspace obelisk-client clientstart
-```
-
-Building a new client verson: 
-
-```
-yarn workspace obelisk-client clientbuild
-```
-
-Have fun! 
+Billboard mode reads real-time arrivals for TTC stop 816 (College St at Borden
+St, GTFS stop ID `8196`). Set `TTC_STOP_ID` to another GTFS stop ID to change
+it. The mode shows `--` when arrivals are unavailable. Contains information
+licensed under the Open Government Licence - Toronto.
+[TTC BusTime real-time arrivals](https://open.toronto.ca/dataset/ttc-bustime-real-time-next-vehicle-arrival-nvas/)

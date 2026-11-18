@@ -1,16 +1,25 @@
 {
-  "name": "y",
-  "version": "y",
+  "name": "obelisk",
+  "version": "0.1.0",
   "description": "Obelisk",
-  "main": "y",
   "license": "MIT",
   "private": true,
+  "engines": {
+    "node": "^24.22.3 || ^26.0.0",
+    "npm": "^11.0.0"
+  },
+  "allowScripts": {
+    "rpi-led-matrix": true
+  },
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "obelisk": "yarn workspace obelisk-server run obelisk",
-    "clientbuild": "yarn workspace obelisk-client run build",
-    "clientstart": "yarn workspace obelisk-client run start"
+    "obelisk": "npm run obelisk --workspace obelisk-server",
+    "clientbuild": "npm run build --workspace obelisk-client",
+    "clientstart": "npm run start --workspace obelisk-client",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm run test --workspaces",
+    "check": "npm run typecheck && npm run clientbuild && npm test"
   }
 }

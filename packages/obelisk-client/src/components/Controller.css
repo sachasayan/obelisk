@@ -9,3 +9,7 @@ z-index: 10;
 .close{
 background-color: rgb(255,255,255) !important;
 }
+
+.Controller-Paper canvas {
+  touch-action: none;
+}

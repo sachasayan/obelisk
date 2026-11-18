@@ -1,112 +1,129 @@
-// LED Matrix
-import { LedMatrix } from 'rpi-led-matrix';
-import { LedMatrixInstance } from 'rpi-led-matrix/dist/types';
-import { Billboard, Clock, Lightcycles, Munchman, Pong, Pulse, Space, Sunlight, Test } from './modes';
-
-// Config
+import { existsSync } from 'node:fs';
+import { createServer } from 'node:http';
+import { join, resolve } from 'node:path';
+import express from 'express';
+import { Server } from 'socket.io';
+import type { Socket } from 'socket.io';
+import type { LedMatrixInstance } from 'rpi-led-matrix';
 import { config, matrixOptions, runtimeOptions } from './config';
 
-let server: any = {};
-interface ObeliskState {
-  matrix: LedMatrixInstance;
-  activeMode: {init, deactivate} | null;
-  sockets: any[],
-  playerData: {y: number}[];
+const modeNames = [
+  'billboard', 'clock', 'lightcycles', 'munchman', 'pong',
+  'pulse', 'space', 'sunlight', 'test', 'exit',
+] as const;
+
+type ModeName = typeof modeNames[number];
+
+interface PlayerData {
+  y: number;
 }
 
-let state: ObeliskState  = {
-  matrix: undefined,
-  activeMode: null,
-  sockets: [],
-  playerData: [{y: 0}]
-};
+export function createControllerServer(
+  playerData: (PlayerData | undefined)[],
+  changeMode: (mode: ModeName) => void,
+) {
+  const app = express();
+  const http = createServer(app);
+  const io = new Server(http, {
+    allowRequest(request, done) {
+      const { origin, host } = request.headers;
+      done(null, !origin || Boolean(host && URL.parse(origin)?.host === host));
+    },
+  });
+  const sockets: Socket[] = [];
 
-let socketOptions = {
-  pingTimeout: 1000,
-  pingInterval: 1000
-};
+  io.on('connection', (socket) => {
+    const player = sockets.push(socket) - 1;
+    playerData.push(undefined);
+    socket.emit('obeliskAssignUser', player);
 
-if (config.runServer){
-  let express = require('express');
-  let DynDNSClient = require('node-dyndns-client');
+    socket.on('changeMode', (value: unknown) => {
+      if (typeof value !== 'string') return;
 
-  server.app = express();
-  server.http = require('http').Server(server.app);
-  server.io = require('socket.io')(server.http, socketOptions);
-  server.port = process.env.PORT || 80;
-  if (config.initPanel){
-    let dyndnsConfig = require('./dyndnsconfig.json');
-    server.dyndns = new DynDNSClient(dyndnsConfig);
-  }
-  let onConnection = (socket) => {
-    state.sockets.push(socket)
-    console.log("Connected to socket, assigning player", state.sockets.indexOf(socket));
-    socket.emit('obeliskAssignUser', state.sockets.indexOf(socket));
+      const mode = modeNames.find((name) => name === value.toLowerCase());
+      if (!mode) return;
 
-    socket.on('changeMode', (data) => {
-      config.verbose ? console.log('Recieved request to change mode to', data) : 0;
-      changeMode(data);
-      if (data == 'pong' || data == 'Pong'){
-        config.verbose ? console.log('Initializing controller:', data) : 0;
-        socket.emit('obeliskInitController', 'pong');
-      }
+      changeMode(mode);
+      if (mode === 'pong') socket.emit('obeliskInitController', 'pong');
     });
-    socket.on('drawing', (data) => {
-      console.log(data.player);
-      state.playerData[data.player] = {y: data.y};
+
+    socket.on('drawing', (value: { y?: unknown } | null) => {
+      const y = value?.y;
+      if (typeof y !== 'number' || !Number.isFinite(y) || y < 0 || y > 1) return;
+
+      const player = sockets.indexOf(socket);
+      if (player !== -1) playerData[player] = { y };
     });
-    socket.on('disconnect', (reason) => {
-      console.log('Got a disconnect...', reason);
-      state.sockets.splice(state.sockets.indexOf(socket),1);
-      state.playerData.splice(state.sockets.indexOf(socket), 1);
-      state.sockets.forEach((s, i) => s.emit('obeliskAssignUser',  i));
+
+    socket.on('disconnect', () => {
+      const player = sockets.indexOf(socket);
+      if (player === -1) return;
+
+      sockets.splice(player, 1);
+      playerData.splice(player, 1);
+      sockets.forEach((client, index) => client.emit('obeliskAssignUser', index));
     });
+  });
+
+  const clientBuild = resolve(__dirname, '../obelisk-client/build');
+  app.use(express.static(clientBuild));
+  app.get('/controller', (_request, response) => {
+    response.sendFile(join(clientBuild, 'index.html'));
+  });
+
+  return { http, io };
+}
+
+function main() {
+  const playerData: (PlayerData | undefined)[] = [];
+  let matrix: LedMatrixInstance | undefined;
+  const panelModes = config.initPanel ? require('./modes') as typeof import('./modes') : undefined;
+  const modes = {
+    billboard: panelModes?.Billboard,
+    clock: panelModes?.Clock,
+    lightcycles: panelModes?.Lightcycles,
+    munchman: panelModes?.Munchman,
+    pong: panelModes?.Pong,
+    pulse: panelModes?.Pulse,
+    space: panelModes?.Space,
+    sunlight: panelModes?.Sunlight,
+    test: panelModes?.Test,
+    exit: undefined,
   };
-  server.io.on('connection', onConnection);
-  console.log(__dirname + '/../obelisk-client/build');
-  server.app.use(express.static('../obelisk-client/build'));
-  server.http.listen(server.port, () => console.log('Server started. Listening on :' + server.port));
-}
+  let activeMode: typeof modes[ModeName];
 
-let changeMode = (mode: string) => {
-  console.log('Changing mode to...', mode);
-  let modes = {
-    'billboard': Billboard,
-    'clock': Clock,
-    'lightcycles': Lightcycles,
-    'munchman': Munchman,
-    'pong': Pong,
-    'pulse': Pulse,
-    'space': Space,
-    'sunlight': Sunlight,
-    'test': Test,
-    'exit': null
+  function changeMode(mode: ModeName) {
+    if (config.verbose) console.log('Changing mode to', mode);
+    if (!matrix) return;
+
+    activeMode?.deactivate();
+    matrix.afterSync(() => {});
+    matrix.clear().sync();
+    activeMode = modes[mode];
+    activeMode?.init({ matrix, playerData });
   }
-  state.activeMode?.deactivate ? state.activeMode.deactivate() : 0;
-  state.activeMode = modes[mode];
-  if (config.initPanel && state.matrix) {
-    if (!state.activeMode){ // Aka, exit
-      state.matrix.afterSync(() => {});
-      state.matrix.clear().sync();
-      //process.exit(0);
-    } else {
-      state.matrix.afterSync(() => {});
-      state.matrix.clear().sync();
-      state.activeMode.init(state);
+
+  if (config.initPanel && matrixOptions && runtimeOptions) {
+    const { LedMatrix } = require('rpi-led-matrix') as typeof import('rpi-led-matrix');
+    matrix = new LedMatrix(matrixOptions, runtimeOptions);
+    changeMode('clock');
+  }
+
+  if (config.runServer) {
+    const dyndnsPath = join(__dirname, 'dyndnsconfig.json');
+    if (config.initPanel && existsSync(dyndnsPath)) {
+      const DynDNSClient = require('node-dyndns-client');
+      new DynDNSClient(require(dyndnsPath));
     }
+
+    const { http } = createControllerServer(playerData, changeMode);
+    const port = Number(process.env.PORT ?? 3001);
+    const host = process.env.HOST ?? '127.0.0.1';
+    http.listen(port, host, () => {
+      const address = http.address();
+      console.log(`Obelisk listening on ${host}:${address && typeof address === 'object' ? address.port : port}`);
+    });
   }
 }
 
-if (config.initPanel) {
-  (async () => {
-    try {
-      state.matrix = new LedMatrix(matrixOptions, runtimeOptions);
-      state.matrix.clear();
-      changeMode('clock');     // Immediately launch into clock
-    }
-    catch (error) {
-      console.error(`${__filename} caught: `, error);
-    }
-  })();
-
-}
+if (require.main === module) main();

@@ -1,45 +1,49 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
+import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
+import { ConnectionContext } from '../providers/ConnectionContext';
 import './ModeSelector.css';
-import {
-  Button,
-  Grid,
-  Paper
-}  from '@material-ui/core';
-import { ConnectionContext, ConnectionState } from '../providers/ConnectionContext';
 
+const modes = [
+  'billboard',
+  'clock',
+  'lightcycles',
+  'munchman',
+  'pong',
+  'pulse',
+  'space',
+  'sunlight',
+  'test',
+  'exit',
+];
 
 function ModeSelector() {
-  let connection: ConnectionState | undefined = useContext(ConnectionContext);
-  let modes = [
-    'billboard',
-    'clock',
-    'lightcycles',
-    'munchman',
-    'pong',
-    'pulse',
-    'space',
-    'sunlight',
-    'test',
-    'exit',
-  ];
+  const connection = useContext(ConnectionContext);
 
-  const changeMode = (mode: string) => {
-    console.log('Changing mode... ', mode);
-    connection?.socket.emit('changeMode', mode);
-  }
   return (
-    <>
-      <Grid item className="ModeSelector">
-        {modes.map((m) => (
-          <Paper className="Paper" key={m} elevation={3} style={{backgroundImage: `url(/modes/${m}.jpg)`}} >
-            <Button className="Button" variant="contained" color="primary" aria-label="delete"  onClick={() => {changeMode(m)} }>
-            {m}
-            </Button>
-          </Paper>
-        ))}
-      </Grid>
-    </>
-  )
+    <div className="ModeSelector">
+      {modes.map((mode) => (
+        <Paper
+          className="Paper"
+          key={mode}
+          elevation={3}
+          style={mode === 'clock' || mode === 'exit' ? undefined : { backgroundImage: `url(/modes/${mode}.jpg)` }}
+        >
+          <Button
+            className="Button"
+            variant="contained"
+            color="primary"
+            disabled={!connection || connection.user < 0}
+            onClick={() => {
+              if (connection?.socket.connected) connection.socket.emit('changeMode', mode);
+            }}
+          >
+            {mode}
+          </Button>
+        </Paper>
+      ))}
+    </div>
+  );
 }
 
 export default ModeSelector;

@@ -1,5 +1,11 @@
 {
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true
-  }
+    "strict": false,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "esModuleInterop": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["**/*.ts"]
 }

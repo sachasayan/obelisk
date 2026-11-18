@@ -1,66 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { IProps } from './types';
-import io from 'socket.io-client';
-import { useHistory } from 'react-router-dom';
+import { createContext, useEffect, useEffectEvent, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 
-export interface ConnectionState {
-  socket: any,
-  user: number,
-  setUser: any
-};
+interface ConnectionState {
+  socket: Socket;
+  user: number;
+}
 
-export const ConnectionContext = React.createContext<ConnectionState | undefined>(undefined);
+export const ConnectionContext = createContext<ConnectionState | undefined>(undefined);
 
-export function ConnectProvider({children}: IProps) {
-  const history = useHistory();
-
-  const setUser = (u: number)  => {
-    console.log('Setting user..', u);
-    updateConnection(prevState => {
-      // Let the user know if they've been reassigned a slot due to someone dropping out.
-      // if (prevState.user != 0 && prevState.user != u) { alert("You've been reassigned as player " + u); }
-      return {
-        ...prevState,
-        user: u
-      }
-    });
-  }
-
-  const initController = (u: number)  => {
-    console.log('Launching controller...', u);
-
-    history.push('/controller');
-  }
-
-
-
-  const connectionState: ConnectionState = {
-    socket: undefined,
-    user: -1,
-    setUser: setUser
-  };
+export function ConnectProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const [socket] = useState(() => io({ autoConnect: false }));
+  const [user, setUser] = useState(-1);
+  const openController = useEffectEvent(() => navigate('/controller'));
 
   useEffect(() => {
-    connectionState.socket = io();
-    connectionState.socket.on('obeliskAssignUser', setUser);
-    console.log('Listening for user assignment...');
-    connectionState.socket.on('obeliskInitController', initController);
-    console.log('Listening for control signals...');
+    const resetUser = () => setUser(-1);
+    const initController = () => openController();
+
+    socket.on('obeliskAssignUser', setUser);
+    socket.on('obeliskInitController', initController);
+    socket.on('disconnect', resetUser);
+    socket.connect();
+
     return () => {
-      connectionState.socket.off('obeleiskAssignUser');
-      connectionState.socket.off('obeliskInitController');
-      console.log('Cleaning up listeners...');
+      socket.off('obeliskAssignUser', setUser);
+      socket.off('obeliskInitController', initController);
+      socket.off('disconnect', resetUser);
+      socket.disconnect();
     };
-
-
-  }, []);
-
-  const [connection, updateConnection] = useState(connectionState);
+  }, [socket]);
 
   return (
-    <ConnectionContext.Provider value={connection}>
+    <ConnectionContext.Provider value={{ socket, user }}>
       {children}
     </ConnectionContext.Provider>
   );
 }
-
