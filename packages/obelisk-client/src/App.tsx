@@ -6,7 +6,6 @@ import InfoBar from './components/InfoBar';
 import ModeSelector from './components/ModeSelector';
 import MunchmanController from './components/MunchmanController';
 import PanelDisplay from './display/PanelDisplay';
-import SimulatorLink from './display/SimulatorLink';
 import { ConnectProvider } from './providers/ConnectionContext';
 
 function ControllerApp() {
@@ -16,7 +15,6 @@ function ControllerApp() {
         <header className="App-header">
           <InfoBar />
         </header>
-        <SimulatorLink />
         <Routes>
           <Route path="/" element={<ModeSelector />} />
           <Route path="/controller" element={<Controller />} />

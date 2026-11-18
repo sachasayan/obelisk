@@ -133,23 +133,6 @@
 .panel-app button:hover { background: #293840; }
 .panel-app :focus-visible { outline: 2px solid var(--panel-accent); outline-offset: -2px; }
 
-.panel-simulator-link {
-  display: inline-flex;
-  align-items: center;
-  gap: .5em;
-  margin: .9rem auto 0;
-  padding: .6rem .85rem;
-  border: 1px solid #38515a;
-  border-radius: .42rem;
-  color: #dcf7f0;
-  background: #1c292f;
-  text-decoration: none;
-  font-size: .83rem;
-  font-weight: 570;
-}
-
-.panel-simulator-link:hover { background: #33434b; }
-
 .panel-divider {
   position: relative;
   z-index: 1;
