@@ -1,3 +1,7 @@
+import { createModeTimers } from '../panel/mode-timers';
+
+
+const timers = createModeTimers();
 
 class Pulser {
   constructor(
@@ -39,7 +43,7 @@ function init(state) {
       matrix.fgColor(pulser.getBrightness(t)).setPixel(pulser.x, pulser.y);
     });
 
-    setTimeout(() => matrix.sync(), 0);
+    timers.schedule(() => matrix.sync(), 0);
   });
 
   matrix.sync();
@@ -47,6 +51,7 @@ function init(state) {
 }
 
 function deactivate() {
+  timers.clear();
 }
 
 let Pulse = { init, deactivate };

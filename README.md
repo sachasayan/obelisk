@@ -73,6 +73,28 @@ to the server URL when starting Vite.
 Run `npm run check` to type-check both workspaces, build the client, and run the
 client and server tests.
 
+## Simulate the installation
+
+From the repository root, start the real Obelisk modes with a virtual LED matrix.
+
+```sh
+npm ci --ignore-scripts
+npm run simulate
+```
+
+Open <http://127.0.0.1:3001/display> for the live panel and choose **2D panel**
+or **3D installation**. Open the controller in a second tab to change modes
+or play Pong. The display tab does not occupy a player slot. The 2D view can
+show the individual pixel grid. In 3D, drag to orbit, scroll or pinch to zoom,
+and use **Front view** to see the panel head-on. Munchman accepts WASD in the
+simulator terminal when it has an interactive terminal.
+
+If another server is using the default port, run
+`PORT=3002 npm run simulate` and open <http://127.0.0.1:3002/display>.
+The simulator uses the dimensions in `packages/obelisk-server/config.ts`
+and the bundled bitmap fonts. Actual brightness, panel scan timing, and
+GPIO behavior need verification on the physical installation.
+
 ## Run with an LED panel
 
 Use a Raspberry Pi running 64-bit Raspberry Pi OS with a compatible GPIO

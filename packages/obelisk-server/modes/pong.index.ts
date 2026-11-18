@@ -1,11 +1,5 @@
-import {
-  LedMatrix,
-  LedMatrixUtils,
-  Font,
-  FontInstance
-} from 'rpi-led-matrix';
-
-
+import { createModeTimers } from '../panel/mode-timers';
+import type { ModeState, PanelMatrix, PlayerData } from '../panel/types';
 interface PongGameSettings {
   defaultBallVelocity: number;
   paddleRadius: number;
@@ -36,13 +30,9 @@ let gameSettings: PongGameSettings = {
 
 let gameState: PongGameState;
 
-let asyncs = {
-  intervals: [],
-  timeouts: []
-};
-let matrix: any;
-let playerData: any;
-let font;
+const timers = createModeTimers();
+let matrix: PanelMatrix;
+let playerData: (PlayerData | undefined)[];
 
 function resetBall() {
   let { paddles } = gameState;
@@ -76,12 +66,12 @@ function incrementScore(player: number){
   gameState.score[player]++;
   if (gameState.score[player] >= 10) {
     gameState.activeScreen = STATUS.WIN_SCREEN;
-     asyncs.timeouts.push(setTimeout(resetGameState, 2000));
-     asyncs.timeouts.push(setTimeout(tick, 3000));
+     timers.schedule(resetGameState, 2000);
+     timers.schedule(tick, 3000);
   } else {
     gameState.ball.velocity = gameSettings.defaultBallVelocity + (2*Math.min(...gameState.score));
     resetBall();
-    asyncs.timeouts.push(setTimeout(tick, 2000));
+    timers.schedule(tick, 2000);
   }
 }
 
@@ -137,7 +127,7 @@ function tick() {
 
   // Check for out of x bounds, if so apply score
   if (ball.x >= 0 && ball.x <= matrix.width()) {
-    asyncs.timeouts.push(setTimeout(() => {tick()}, (1 / ball.velocity) * 1000));
+    timers.schedule(() => {tick()}, (1 / ball.velocity) * 1000);
   };
   if (ball.x < 0) { incrementScore(0); };
   if (ball.x > matrix.width()) { incrementScore(1); };
@@ -192,33 +182,29 @@ function gameLoop(){
   }
 }
 
-function init (state){
+function init (state: ModeState){
     playerData = state.playerData;
     matrix = state.matrix;
     matrix.clear();
 
-    font = new Font('helvR12', `${process.cwd()}/fonts/helvR12.bdf`);
-    //const lines = LayoutUtils.textToLines(font, matrix.width(), 'Hello, matrix!');
-
-    matrix.font(font);
+    matrix.font(state.loadFont('helvR12'));
 
     resetGameState();
-    asyncs.timeouts.push(setTimeout(tick, 3000));
+    timers.schedule(tick, 3000);
 
     matrix.afterSync((mat, dt, t) => {
       matrix.clear();
       inputLoop(t);
       gameLoop();
 
-      asyncs.timeouts.push(setTimeout(() => matrix.sync(), 0));
+      timers.schedule(() => matrix.sync(), 0);
     });
 
     matrix.sync();
 }
 
 function deactivate() {
-  asyncs.intervals.map(e => clearInterval(e));
-  asyncs.timeouts.map(e => clearTimeout(e));
+  timers.clear();
 }
 
 let Pong = { init, deactivate };

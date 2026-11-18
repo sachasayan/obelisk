@@ -1,3 +1,4 @@
+import { createModeTimers } from '../panel/mode-timers';
 import chroma from 'chroma-js';
 
 import {
@@ -10,10 +11,7 @@ import {
   LightCycle
 } from './lightcycles.types';
 
-let asyncs = {
-  intervals: [],
-  timeouts: []
-};
+const timers = createModeTimers();
 let matrix;
 
 let gameSettings = {
@@ -72,7 +70,7 @@ function tick(){
       gameState.players.some(p => p.status == 'alive') ? null : resetGame();
 
   });
-  asyncs.timeouts.push(setTimeout(tick, gameSettings.tick));
+  timers.schedule(tick, gameSettings.tick);
 }
 //////////////////////
 // GAME SCREENS
@@ -118,18 +116,17 @@ function init (state){
 
       gameLoop(t);
 
-      setTimeout(() => matrix.sync(), 0);
+      timers.schedule(() => matrix.sync(), 0);
     });
 
     resetGame();
-    asyncs.timeouts.push(setTimeout(tick, 1000));
+    timers.schedule(tick, 1000);
     matrix.sync();
 
 }
 
 function deactivate() {
-  asyncs.intervals.map(e => clearInterval(e));
-  asyncs.timeouts.map(e => clearTimeout(e));
+  timers.clear();
 }
 
 

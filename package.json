@@ -20,6 +20,7 @@
     "clientstart": "npm run start --workspace obelisk-client",
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm run test --workspaces",
-    "check": "npm run typecheck && npm run clientbuild && npm test"
+    "check": "npm run typecheck && npm run clientbuild && npm test",
+    "simulate": "npm run clientbuild && npm run simulate --workspace obelisk-server"
   }
 }

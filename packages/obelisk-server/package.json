@@ -6,7 +6,8 @@
   "scripts": {
     "obelisk": "node --import tsx index.ts",
     "test": "node --import tsx --test test/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "simulate": "node --import tsx index.ts --simulate"
   },
   "repository": {
     "type": "git",

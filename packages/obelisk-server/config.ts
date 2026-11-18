@@ -1,32 +1,37 @@
 import type { MatrixOptions, RuntimeOptions } from 'rpi-led-matrix';
 
-let config = {
+export const config = {
   verbose: true,
   runServer: true,
-  initPanel: false
+  initPanel: false,
 };
 
-const panel = config.initPanel ? require('rpi-led-matrix') as typeof import('rpi-led-matrix') : undefined;
-
-const matrixOptions: MatrixOptions | null = panel ? {
-  ...panel.LedMatrix.defaultMatrixOptions(),
+export const panelOptions = {
   rows: 16,
   cols: 32,
   chainLength: 4,
+  parallel: 1,
   brightness: 100,
   rowAddressType: 2,
   multiplexing: 3,
-  hardwareMapping: panel.GpioMapping.Regular,
   pwmLsbNanoseconds: 1500,
   pwmBits: 8,
-  pixelMapperConfig: panel.LedMatrixUtils.encodeMappers(
-    { type: panel.PixelMapperType.Rotate, angle: 180 }
-  )
-} : null;
+} satisfies Partial<MatrixOptions>;
 
-const runtimeOptions: RuntimeOptions | null = panel ? {
-  ...panel.LedMatrix.defaultRuntimeOptions(),
-  gpioSlowdown: 4
-} : null;
+export function getHardwareOptions(panel: typeof import('rpi-led-matrix')) {
+  const matrixOptions: MatrixOptions = {
+    ...panel.LedMatrix.defaultMatrixOptions(),
+    ...panelOptions,
+    hardwareMapping: panel.GpioMapping.Regular,
+    pixelMapperConfig: panel.LedMatrixUtils.encodeMappers(
+      { type: panel.PixelMapperType.Rotate, angle: 180 },
+    ),
+  };
 
-export { config, matrixOptions, runtimeOptions };
+  const runtimeOptions: RuntimeOptions = {
+    ...panel.LedMatrix.defaultRuntimeOptions(),
+    gpioSlowdown: 4,
+  };
+
+  return { matrixOptions, runtimeOptions };
+}

@@ -1,3 +1,4 @@
+import { createModeTimers } from '../panel/mode-timers';
 import chroma from 'chroma-js';
 import { readPng } from '../png';
 
@@ -14,10 +15,7 @@ import {
 
 import { fade, colors, getAdjacent } from './munchman.utils';
 
-let asyncs = {
-  intervals: [],
-  timeouts: []
-};
+const timers = createModeTimers();
 let matrix;
 
 let gameSettings: MunchGameSettings = {
@@ -88,7 +86,7 @@ function handlePlayerMovement() {
   }
 
   hitDetection();
-  asyncs.timeouts.push(setTimeout(handlePlayerMovement, gameSettings.playerTick));
+  timers.schedule(handlePlayerMovement, gameSettings.playerTick);
 }
 
 function handleGhostMovement(){
@@ -108,7 +106,7 @@ function handleGhostMovement(){
   });
   hitDetection();
 
-  asyncs.timeouts.push(setTimeout(handleGhostMovement, gameSettings.ghostsTick));
+  timers.schedule(handleGhostMovement, gameSettings.ghostsTick);
 }
 
 function hitDetection() {
@@ -118,7 +116,7 @@ function hitDetection() {
   if (field[player.y][player.x] === 'P') {
     field[player.y][player.x] = 'O';
     sickoMode = true;
-    asyncs.timeouts.push(setTimeout(() => { sickoMode = false}, 5000));
+    timers.schedule(() => { sickoMode = false}, 5000);
   }
 
   // Did player hit a ghost? Die, sorry. :(
@@ -208,15 +206,15 @@ function init (state){
           gameSettings.grid += '\n';
         }
         resetGame();
-        asyncs.timeouts.push(setTimeout(handlePlayerMovement, 2000));
-        asyncs.timeouts.push(setTimeout(handleGhostMovement, 2000));
+        timers.schedule(handlePlayerMovement, 2000);
+        timers.schedule(handleGhostMovement, 2000);
 
         matrix.afterSync((mat, dt, t) => {
         matrix.clear();
 
         gameLoop(t);
 
-        asyncs.timeouts.push(setTimeout(() => matrix.sync(), 0));
+        timers.schedule(() => matrix.sync(), 0);
       });
       matrix.sync();
     })
@@ -232,7 +230,7 @@ function init (state){
         const key = bytes.toString();
         if (key === '\u0003') process.exit();
         if (key === 'x') detachInput?.();
-        if ('wasd'.includes(key)) gameState.inputs.push(key);
+        if (gameState && /^[wasd]$/.test(key)) gameState.inputs.push(key);
         process.stdout.write(key);
       }
 
@@ -251,10 +249,7 @@ function init (state){
 function deactivate() {
   activation++;
   detachInput?.();
-  asyncs.intervals.forEach(clearInterval);
-  asyncs.timeouts.forEach(clearTimeout);
-  asyncs.intervals.length = 0;
-  asyncs.timeouts.length = 0;
+  timers.clear();
 }
 
 

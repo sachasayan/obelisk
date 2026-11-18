@@ -4,8 +4,12 @@ import { join, resolve } from 'node:path';
 import express from 'express';
 import { Server } from 'socket.io';
 import type { Socket } from 'socket.io';
-import type { LedMatrixInstance } from 'rpi-led-matrix';
-import { config, matrixOptions, runtimeOptions } from './config';
+import type { FontInstance } from 'rpi-led-matrix';
+import { DISPLAY_CAPABILITY, DISPLAY_FRAME, DISPLAY_NAMESPACE } from '../../shared/panel';
+import { config, getHardwareOptions, panelOptions } from './config';
+import { BitmapFont } from './panel/bitmap-font';
+import type { PanelMatrix, PlayerData } from './panel/types';
+import { VirtualMatrix } from './panel/virtual-matrix';
 
 const modeNames = [
   'billboard', 'clock', 'lightcycles', 'munchman', 'pong',
@@ -14,13 +18,10 @@ const modeNames = [
 
 type ModeName = typeof modeNames[number];
 
-interface PlayerData {
-  y: number;
-}
-
 export function createControllerServer(
   playerData: (PlayerData | undefined)[],
   changeMode: (mode: ModeName) => void,
+  display?: VirtualMatrix,
 ) {
   const app = express();
   const http = createServer(app);
@@ -65,9 +66,19 @@ export function createControllerServer(
     });
   });
 
+  if (display) {
+    io.of(DISPLAY_NAMESPACE).on('connection', (socket) => {
+      socket.emit(DISPLAY_FRAME, display.latest());
+    });
+  }
+
+  app.get(DISPLAY_CAPABILITY, (_request, response) => {
+    response.json({ simulated: Boolean(display) });
+  });
+
   const clientBuild = resolve(__dirname, '../obelisk-client/build');
   app.use(express.static(clientBuild));
-  app.get('/controller', (_request, response) => {
+  app.get(['/controller', '/display'], (_request, response) => {
     response.sendFile(join(clientBuild, 'index.html'));
   });
 
@@ -75,9 +86,45 @@ export function createControllerServer(
 }
 
 function main() {
+  const simulate = process.argv.includes('--simulate');
   const playerData: (PlayerData | undefined)[] = [];
-  let matrix: LedMatrixInstance | undefined;
-  const panelModes = config.initPanel ? require('./modes') as typeof import('./modes') : undefined;
+  const fonts = new Map<string, FontInstance>();
+  let createFont = (name: string, path: string): FontInstance => new BitmapFont(name, path);
+  let controller: ReturnType<typeof createControllerServer> | undefined;
+  let matrix: PanelMatrix | undefined;
+
+  let lastFrameMode: string | undefined;
+  const virtualMatrix = simulate ? new VirtualMatrix({
+    width: panelOptions.cols * panelOptions.chainLength,
+    height: panelOptions.rows * panelOptions.parallel,
+    tileWidth: panelOptions.cols,
+    tileHeight: panelOptions.rows,
+  }, panelOptions.brightness, (frame) => {
+    const viewers = controller?.io.of(DISPLAY_NAMESPACE);
+    if (frame.mode === lastFrameMode) viewers?.volatile.emit(DISPLAY_FRAME, frame);
+    else viewers?.emit(DISPLAY_FRAME, frame);
+    lastFrameMode = frame.mode;
+  }) : undefined;
+
+  if (virtualMatrix) {
+    matrix = virtualMatrix;
+  } else if (config.initPanel) {
+    const native = require('rpi-led-matrix') as typeof import('rpi-led-matrix');
+    const { matrixOptions, runtimeOptions } = getHardwareOptions(native);
+    matrix = new native.LedMatrix(matrixOptions, runtimeOptions);
+    createFont = (name, path) => new native.Font(name, path);
+  }
+
+  function loadFont(name: string) {
+    let font = fonts.get(name);
+    if (!font) {
+      font = createFont(name, join(__dirname, 'fonts', name + '.bdf'));
+      fonts.set(name, font);
+    }
+    return font;
+  }
+
+  const panelModes = matrix ? require('./modes') as typeof import('./modes') : undefined;
   const modes = {
     billboard: panelModes?.Billboard,
     clock: panelModes?.Clock,
@@ -97,26 +144,22 @@ function main() {
     if (!matrix) return;
 
     activeMode?.deactivate();
+    virtualMatrix?.setMode(mode);
     matrix.afterSync(() => {});
     matrix.clear().sync();
     activeMode = modes[mode];
-    activeMode?.init({ matrix, playerData });
+    activeMode?.init({ matrix, playerData, loadFont });
   }
 
-  if (config.initPanel && matrixOptions && runtimeOptions) {
-    const { LedMatrix } = require('rpi-led-matrix') as typeof import('rpi-led-matrix');
-    matrix = new LedMatrix(matrixOptions, runtimeOptions);
-    changeMode('clock');
-  }
-
-  if (config.runServer) {
+  if (config.runServer || simulate) {
     const dyndnsPath = join(__dirname, 'dyndnsconfig.json');
-    if (config.initPanel && existsSync(dyndnsPath)) {
+    if (!simulate && config.initPanel && existsSync(dyndnsPath)) {
       const DynDNSClient = require('node-dyndns-client');
       new DynDNSClient(require(dyndnsPath));
     }
 
-    const { http } = createControllerServer(playerData, changeMode);
+    controller = createControllerServer(playerData, changeMode, virtualMatrix);
+    const { http } = controller;
     const port = Number(process.env.PORT ?? 3001);
     const host = process.env.HOST ?? '127.0.0.1';
     http.listen(port, host, () => {
@@ -124,6 +167,8 @@ function main() {
       console.log(`Obelisk listening on ${host}:${address && typeof address === 'object' ? address.port : port}`);
     });
   }
+
+  if (matrix) changeMode('clock');
 }
 
 if (require.main === module) main();

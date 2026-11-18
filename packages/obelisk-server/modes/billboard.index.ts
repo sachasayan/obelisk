@@ -1,17 +1,15 @@
-import { join } from 'node:path';
 import type { PNG } from 'pngjs';
-import { Font } from 'rpi-led-matrix';
-import type { LedMatrixInstance } from 'rpi-led-matrix';
+import type { ModeState } from '../panel/types';
 import { forEachOpaquePixel, readPng } from '../png';
 import { fetchArrivalMinutes } from '../ttc';
 
 let stop = () => {};
 
-function init({ matrix }: { matrix: LedMatrixInstance }) {
+function init({ matrix, loadFont }: ModeState) {
   const activation = new AbortController();
   const { signal } = activation;
-  const clockFont = new Font('helvR12', join(__dirname, '../fonts/helvR12.bdf'));
-  const arrivalFont = new Font('5x7', join(__dirname, '../fonts/5x7.bdf'));
+  const clockFont = loadFont('helvR12');
+  const arrivalFont = loadFont('5x7');
   let image: PNG | undefined;
   let minutes: number | undefined;
   let frameTimer: NodeJS.Timeout | undefined;
