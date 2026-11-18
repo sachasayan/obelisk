@@ -109,12 +109,16 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
     renderer.render(scene, camera);
   }
 
-  function setView(front: boolean) {
+  function fitDistance(aspect: number) {
     const fov = camera.fov * Math.PI / 180;
-    const distance = Math.max(
-      width / (1.7 * Math.tan(fov / 2) * camera.aspect),
+    return Math.max(
+      width / (1.7 * Math.tan(fov / 2) * aspect),
       (height + 15) / (1.1 * Math.tan(fov / 2)),
     );
+  }
+
+  function setView(front: boolean) {
+    const distance = fitDistance(camera.aspect);
     controls.target.set(0, 0, 0);
     camera.position.set(front ? 0 : -distance * 0.27, front ? 0 : distance * 0.19, distance);
     controls.update();
@@ -124,8 +128,14 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
   function resize() {
     const w = Math.max(1, container.clientWidth);
     const h = Math.max(1, container.clientHeight);
-    camera.aspect = w / h;
+    const nextAspect = w / h;
+    const scale = fitDistance(nextAspect) / fitDistance(camera.aspect);
+    camera.aspect = nextAspect;
     camera.updateProjectionMatrix();
+    if (camera.position.lengthSq() && scale !== 1) {
+      camera.position.sub(controls.target).multiplyScalar(scale).add(controls.target);
+      controls.update();
+    }
     renderer.setSize(w, h, false);
   }
 

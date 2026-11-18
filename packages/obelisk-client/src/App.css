@@ -1,3 +1,126 @@
 .App {
   text-align: center;
 }
+
+body:has(.App--embedded) { background: #161d23; }
+
+.App--embedded {
+  box-sizing: border-box;
+  padding: .65rem .75rem 1rem;
+  color: #edf2f2;
+  background: #161d23;
+  text-align: left;
+}
+
+.App--embedded .EmbeddedConnection {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 1.6rem;
+  color: #a6b4bd;
+  font-size: .75rem;
+}
+
+.EmbeddedConnection-dot {
+  width: .45rem;
+  height: .45rem;
+  border-radius: 50%;
+  background: #b69b75;
+}
+
+.EmbeddedConnection-dot.is-connected { background: #9de3c7; }
+
+.App--embedded h1 {
+  margin: 0;
+  font-size: .82rem;
+  line-height: 1.5;
+  font-weight: 630;
+}
+
+.App--embedded .ModeSelector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .4rem;
+  margin-top: .55rem;
+  text-align: left;
+}
+
+.App--embedded .ModeSelector h1 {
+  grid-column: 1 / -1;
+  margin-bottom: .12rem;
+}
+
+.App--embedded .ModeSelector .Paper {
+  margin: 0;
+  padding: 0;
+  border-radius: .32rem;
+  background: none;
+  box-shadow: none;
+}
+
+.App--embedded .ModeSelector .Button {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.15rem;
+  justify-content: start;
+  padding: .3rem .55rem;
+  border-color: #34414a;
+  border-radius: .32rem;
+  background: #202a32;
+  box-shadow: none;
+  color: #e6eded;
+  font-size: .77rem;
+  text-transform: capitalize;
+}
+
+.App--embedded .ModeSelector .Button:disabled {
+  color: #93a2ab;
+  background: #1b232b;
+}
+
+.App--embedded .ModeSelector .Button:not(:disabled):hover {
+  border-color: #5f8d7e;
+  background: #283c3d;
+}
+
+.App--embedded .EmbeddedController-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .4rem;
+  margin: .4rem 0;
+}
+
+.EmbeddedController-title a {
+  color: #9de3c7;
+  font-size: .73rem;
+  text-transform: none;
+}
+
+.App--embedded .Controller-Paper {
+  width: min(100%, 17rem);
+  height: auto;
+  margin: .3rem auto 0;
+  border: 1px solid #4b5e66;
+  border-radius: .4rem;
+  background: #10171d;
+}
+
+.App--embedded .Controller-Paper canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: crosshair;
+}
+
+.EmbeddedController-hint {
+  margin: .55rem 0 0;
+  color: #a6b4bd;
+  text-align: center;
+  font-size: .75rem;
+}
+
+.App--embedded :focus-visible {
+  outline: 2px solid #9de3c7;
+  outline-offset: -2px;
+}

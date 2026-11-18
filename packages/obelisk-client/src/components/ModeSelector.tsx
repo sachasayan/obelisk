@@ -17,21 +17,22 @@ const modes = [
   'exit',
 ];
 
-function ModeSelector() {
+function ModeSelector({ embedded }: { embedded: boolean }) {
   const connection = useContext(ConnectionContext);
 
   return (
     <div className="ModeSelector">
+      {embedded && <h1>Modes</h1>}
       {modes.map((mode) => (
         <Paper
           className="Paper"
           key={mode}
           elevation={3}
-          style={mode === 'clock' || mode === 'exit' ? undefined : { backgroundImage: `url(/modes/${mode}.jpg)` }}
+          style={embedded || mode === 'clock' || mode === 'exit' ? undefined : { backgroundImage: `url(/modes/${mode}.jpg)` }}
         >
           <Button
             className="Button"
-            variant="contained"
+            variant={embedded ? "outlined" : "contained"}
             color="primary"
             disabled={!connection || connection.user < 0}
             onClick={() => {

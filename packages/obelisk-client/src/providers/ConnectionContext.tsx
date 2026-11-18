@@ -11,11 +11,11 @@ interface ConnectionState {
 
 export const ConnectionContext = createContext<ConnectionState | undefined>(undefined);
 
-export function ConnectProvider({ children }: { children: ReactNode }) {
+export function ConnectProvider({ children, controllerPath }: { children: ReactNode; controllerPath: string }) {
   const navigate = useNavigate();
   const [socket] = useState(() => io({ autoConnect: false }));
   const [user, setUser] = useState(-1);
-  const openController = useEffectEvent(() => navigate('/controller'));
+  const openController = useEffectEvent(() => navigate(controllerPath));
 
   useEffect(() => {
     const resetUser = () => setUser(-1);

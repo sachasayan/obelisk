@@ -83,9 +83,10 @@ npm run simulate
 ```
 
 Open <http://127.0.0.1:3001/display> for the live panel and choose **2D panel**
-or **3D installation**. Open the controller in a second tab to change modes
-or play Pong. The display tab does not occupy a player slot. The 2D view can
-show the individual pixel grid. In 3D, drag to orbit, scroll or pinch to zoom,
+or **3D installation**. Use the docked remote to change modes or play Pong
+alongside the preview. Drag the divider to resize the remote on a wider screen.
+Use **Remote** to collapse or reopen the dock. The embedded remote occupies a
+player slot. The 2D view can show the individual pixel grid. In 3D, drag to orbit, scroll or pinch to zoom,
 and use **Front view** to see the panel head-on. Munchman accepts WASD in the
 simulator terminal when it has an interactive terminal.
 
