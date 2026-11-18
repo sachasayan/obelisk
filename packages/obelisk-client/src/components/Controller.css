@@ -1,8 +1,8 @@
 .Controller-Paper {
 margin: 50px auto;
 margin-bottom: 10px;
-width: 300px;
-height: 300px;
+width: min(300px, 100%);
+height: auto;
 z-index: 10;
 }
 
@@ -11,5 +11,8 @@ background-color: rgb(255,255,255) !important;
 }
 
 .Controller-Paper canvas {
+  display: block;
+  width: 100%;
+  height: auto;
   touch-action: none;
 }

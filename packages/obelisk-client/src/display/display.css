@@ -317,7 +317,7 @@
   .panel-layout--collapsed .panel-workspace { min-height: calc(100dvh - 5rem); }
   .panel-divider { display: none; }
   .panel-remote { border-top: 1px solid var(--panel-line); }
-  .panel-remote iframe { height: var(--remote-height); min-height: 13rem; }
+  .panel-remote iframe { height: clamp(15rem, 46dvh, 24rem); }
   .panel-toolbar { padding-right: .4rem; }
   .panel-switch button { padding-inline: .4rem; }
   .panel-status { justify-content: start; }

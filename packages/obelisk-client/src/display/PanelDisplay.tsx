@@ -35,10 +35,7 @@ export default function PanelDisplay() {
   const [grid, setGrid] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [remoteOpen, setRemoteOpen] = useState(true);
-  const [dockWidth, setDockWidth] = useState(302);
-  const [remoteHeight, setRemoteHeight] = useState(264);
-  const remoteFrame = useRef<HTMLIFrameElement>(null);
-  const remoteSizeObserver = useRef<ResizeObserver | undefined>(undefined);
+  const [dockWidth, setDockWidth] = useState(330);
   const [resizing, setResizing] = useState(false);
   const resizeStart = useRef<{ x: number; width: number } | null>(null);
   const viewport = useRef<HTMLElement>(null);
@@ -70,19 +67,6 @@ export default function PanelDisplay() {
     document.addEventListener('fullscreenchange', update);
     return () => document.removeEventListener('fullscreenchange', update);
   }, []);
-
-  useEffect(() => () => remoteSizeObserver.current?.disconnect(), []);
-
-  function observeRemoteHeight() {
-    remoteSizeObserver.current?.disconnect();
-    const root = remoteFrame.current?.contentDocument?.getElementById('root');
-    if (!root || typeof ResizeObserver === 'undefined') return;
-
-    remoteSizeObserver.current = new ResizeObserver(([entry]) => {
-      if (entry.contentRect.height > 0) setRemoteHeight(Math.ceil(entry.contentRect.height));
-    });
-    remoteSizeObserver.current.observe(root);
-  }
 
   function selectView(next: '2d' | '3d') {
     const nextParams = new URLSearchParams(params);
@@ -135,10 +119,7 @@ export default function PanelDisplay() {
     updateDockWidth(width);
   }
 
-  const layout = {
-    '--dock-width': `${dockWidth}px`,
-    '--remote-height': `${remoteHeight}px`,
-  } as CSSProperties;
+  const layout = { '--dock-width': `${dockWidth}px` } as CSSProperties;
 
   return (
     <main className={`panel-app${resizing ? ' panel-app--resizing' : ''}`} style={layout}>
@@ -226,7 +207,7 @@ export default function PanelDisplay() {
             <SettingsRemoteOutlinedIcon aria-hidden="true" />
             <h2>Remote</h2>
           </header>
-          <iframe ref={remoteFrame} src="/?embed=1" title="Obelisk remote" onLoad={observeRemoteHeight} />
+          <iframe src="/" title="Obelisk remote" />
         </aside>
       </div>
 

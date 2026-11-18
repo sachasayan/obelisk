@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './App.css';
 import Controller from './components/Controller';
 import InfoBar from './components/InfoBar';
@@ -8,20 +8,16 @@ import SimulatorLink from './display/SimulatorLink';
 import { ConnectProvider } from './providers/ConnectionContext';
 
 function ControllerApp() {
-  const [params] = useSearchParams();
-  const embedded = params.get('embed') === '1';
-  const query = embedded ? '?embed=1' : '';
-
   return (
-    <ConnectProvider controllerPath={`/controller${query}`}>
-      <div className={embedded ? 'App App--embedded' : 'App'}>
+    <ConnectProvider>
+      <div className="App">
         <header className="App-header">
-          <InfoBar embedded={embedded} />
+          <InfoBar />
         </header>
-        {!embedded && <SimulatorLink />}
+        <SimulatorLink />
         <Routes>
-          <Route path="/" element={<ModeSelector embedded={embedded} />} />
-          <Route path="/controller" element={<Controller embedded={embedded} homePath={`/${query}`} />} />
+          <Route path="/" element={<ModeSelector />} />
+          <Route path="/controller" element={<Controller />} />
         </Routes>
       </div>
     </ConnectProvider>

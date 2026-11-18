@@ -6,17 +6,8 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import { ConnectionContext } from '../providers/ConnectionContext';
 
-function InfoBar({ embedded }: { embedded: boolean }) {
+function InfoBar() {
   const user = useContext(ConnectionContext)?.user ?? -1;
-
-  if (embedded) {
-    return (
-      <div className="EmbeddedConnection" role="status">
-        <span className={user >= 0 ? 'EmbeddedConnection-dot is-connected' : 'EmbeddedConnection-dot'} />
-        {user >= 0 ? `Player ${user + 1}` : 'Connecting…'}
-      </div>
-    );
-  }
 
   return (
     <AppBar position="static">

@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { ConnectionContext } from '../providers/ConnectionContext';
 import './Controller.css';
 
-function Controller({ embedded, homePath }: { embedded: boolean; homePath: string }) {
+function Controller() {
   const connection = useContext(ConnectionContext);
   const activePointer = useRef<number | null>(null);
   const lastMove = useRef(0);
@@ -23,10 +23,6 @@ function Controller({ embedded, homePath }: { embedded: boolean; homePath: strin
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.beginPath();
       context.arc(x * canvas.width, y * canvas.height, 10, 0, 2 * Math.PI);
-      if (embedded) {
-        context.fillStyle = '#9de3c7';
-        context.strokeStyle = '#9de3c7';
-      }
       context.stroke();
       context.fill();
     }
@@ -62,12 +58,6 @@ function Controller({ embedded, homePath }: { embedded: boolean; homePath: strin
 
   return (
     <>
-      {embedded && (
-        <div className="EmbeddedController-title">
-          <h1>Pong</h1>
-          <Button component={Link} to={homePath}>Back to modes</Button>
-        </div>
-      )}
       <Paper className="Controller-Paper" elevation={3}>
         <canvas
           aria-label="Pong touch controller"
@@ -80,14 +70,8 @@ function Controller({ embedded, homePath }: { embedded: boolean; homePath: strin
           onLostPointerCapture={stop}
         />
       </Paper>
-      {embedded ? (
-        <p className="EmbeddedController-hint">Drag to move your paddle.</p>
-      ) : (
-        <>
-          <div style={{ color: 'white', margin: '10px' }}>Psst.. Touch me to control me. ✌️</div>
-          <Button className="close" component={Link} to={homePath}>Home</Button>
-        </>
-      )}
+      <div style={{ color: 'white', margin: '10px' }}>Psst.. Touch me to control me. ✌️</div>
+      <Button className="close" component={Link} to="/">Home</Button>
     </>
   );
 }
