@@ -1,0 +1,58 @@
+.MunchmanController {
+  box-sizing: border-box;
+  max-width: 22rem;
+  margin: 1.25rem auto;
+  padding: 0 .75rem .75rem;
+  color: #f0f3f4;
+}
+
+.MunchmanController h1 {
+  margin: 0;
+  font-size: 1.22rem;
+}
+
+.MunchmanController p {
+  margin: .45rem 0 1rem;
+  color: #adbac3;
+  font-size: .82rem;
+  line-height: 1.4;
+}
+
+.MunchmanController-pad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 3.35rem));
+  grid-template-areas: ". up ." "left down right";
+  justify-content: center;
+  gap: .4rem;
+  margin: 0 0 1.15rem;
+}
+
+.MunchmanController-up { grid-area: up; }
+.MunchmanController-left { grid-area: left; }
+.MunchmanController-down { grid-area: down; }
+.MunchmanController-right { grid-area: right; }
+
+.MunchmanController-pad button {
+  min-height: 3rem;
+  border: 1px solid #4f4b37;
+  border-radius: .42rem;
+  background: #27251b;
+  color: #ffe67b;
+  font: 600 1.42rem/1 system-ui, sans-serif;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.MunchmanController-pad button:not(:disabled):hover { background: #38331e; }
+.MunchmanController-pad button:not(:disabled):active { background: #504520; }
+
+.MunchmanController-pad button:focus-visible {
+  outline: 2px solid #ffe67b;
+  outline-offset: 2px;
+}
+
+.MunchmanController-pad button:disabled {
+  opacity: .5;
+  cursor: default;
+}

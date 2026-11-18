@@ -1,3 +1,5 @@
+import type { MunchmanDirection } from '../../../shared/munchman';
+import type { ModeState, PanelMatrix } from '../panel/types';
 import { createModeTimers } from '../panel/mode-timers';
 import chroma from 'chroma-js';
 import { readPng } from '../png';
@@ -16,7 +18,25 @@ import {
 import { fade, colors, getAdjacent } from './munchman.utils';
 
 const timers = createModeTimers();
-let matrix;
+let matrix: PanelMatrix;
+let manualControl = false;
+let pendingDirection: MunchmanDirection | undefined;
+
+const directionOffsets: Record<MunchmanDirection, readonly [number, number]> = {
+  up: [0, -1],
+  left: [-1, 0],
+  down: [0, 1],
+  right: [1, 0],
+};
+
+const terminalDirections = new Map<string, MunchmanDirection>([
+  ['w', 'up'], ['a', 'left'], ['s', 'down'], ['d', 'right'],
+]);
+
+function move(direction: MunchmanDirection) {
+  manualControl = true;
+  pendingDirection = direction;
+}
 
 let gameSettings: MunchGameSettings = {
   grid: '',
@@ -32,7 +52,6 @@ function resetGame() {
     activeScreen: STATUS.PLAYING_GAME,
     field: gameSettings.grid.trim().split('\n').map(row => row.split('')),
     sickoMode: false,
-    inputs: [],
     ghosts: [new Ghost('inky', 62, 7), new Ghost('binky', 62, 8), new Ghost('pinky', 64, 7), new Ghost('clyde', 64, 8)],
     player: new Player(),
     animations: {
@@ -46,43 +65,32 @@ function resetGame() {
 // MOVEMENT
 //////////////////////
 
-function handlePlayerMovement() {
-  let player = gameState.player;
-  // Autonomous Movement
-  if (!gameState.inputs.length && gameSettings.demoMode){
-    let candidates = getAdjacent(player.x, player.y, matrix)
-      .filter(coords => !(coords.x == player.previous.x && coords.y == player.previous.y)) // Remove where we just came from.
-      .filter(coords => gameState.field[coords.y][coords.x] !== 'W'); //Filter out walls
-    let finalCandidate = candidates[Math.floor(Math.random()*candidates.length)];
-    if (finalCandidate) {
-      gameState.inputs.push('x');
-      player.intent.x = finalCandidate.x;
-      player.intent.y = finalCandidate.y;
-    }
+function canEnter({ x, y }: { x: number; y: number }) {
+  const tile = gameState.field[y]?.[x];
+  return tile !== undefined && tile !== 'W' && x < matrix.width() && y < matrix.height();
+}
 
+function handlePlayerMovement() {
+  const { player, field } = gameState;
+  const direction = pendingDirection;
+  pendingDirection = undefined;
+  let target: { x: number; y: number } | undefined;
+
+  if (direction) {
+    const [dx, dy] = directionOffsets[direction];
+    target = { x: player.x + dx, y: player.y + dy };
+  } else if (!manualControl && gameSettings.demoMode) {
+    const candidates = getAdjacent(player.x, player.y, matrix)
+      .filter(({ x, y }) => x !== player.previous.x || y !== player.previous.y)
+      .filter(canEnter);
+    target = candidates[Math.floor(Math.random() * candidates.length)];
   }
 
-  while (gameState.inputs.length){
-    let i = gameState.inputs.shift();
-    // Move player
-    if (i == 'a') { player.intent.x -= 1; }
-    if (i == 'd') { player.intent.x += 1; }
-    if (i == 'w') { player.intent.y -= 1; }
-    if (i == 's') { player.intent.y += 1; }
-
-    if (gameState.field[player.intent.y][player.intent.x] !== 'W') {
-      player.previous.x = player.x;
-      player.previous.y = player.y;
-      player.x = player.intent.x;
-      player.y = player.intent.y;
-    } else {
-      player.intent.x = player.x;
-      player.intent.y = player.y;
-    }
-    // Eat dot
-    if (gameState.field[player.y][player.x] === 'D') {
-      gameState.field[player.y][player.x] = 'O'
-    }
+  if (target && canEnter(target)) {
+    player.previous = { x: player.x, y: player.y };
+    player.x = target.x;
+    player.y = target.y;
+    if (field[player.y][player.x] === 'D') field[player.y][player.x] = 'O';
   }
 
   hitDetection();
@@ -96,7 +104,7 @@ function handleGhostMovement(){
     // Get all viable candidates.
     let candidates = getAdjacent(g.x, g.y, matrix)
       .filter(coords => !(coords.x == g.previous.x && coords.y == g.previous.y)) // Remove where we just came from.
-      .filter(coords => gameState.field[coords.y][coords.x] !== 'W'); //Filter out walls
+      .filter(canEnter);
     let finalCandidate = candidates[Math.floor(Math.random()*candidates.length)];
     g.previous = { x: g.x, y: g.y};
     if (finalCandidate) {
@@ -147,7 +155,7 @@ function displayGameScreen(t: number){
 
     //Previously... .fgColor(c === 'D' ? colors.dot(fade(t, 1000, (x / 128) )).num() : BASE_COLORS[TILES[c]])
     matrix
-      .fgColor(BASE_COLORS[TILES[c]])
+      .fgColor(BASE_COLORS[TILES[c as keyof typeof TILES]] ?? BASE_COLORS.empty)
       .setPixel(x, y);
     });
   });
@@ -187,7 +195,7 @@ function gameLoop(t: number){
 let activation = 0;
 let detachInput: (() => void) | undefined;
 
-function init (state){
+function init(state: ModeState) {
   deactivate();
   matrix = state.matrix;
   const currentActivation = activation;
@@ -206,7 +214,7 @@ function init (state){
           gameSettings.grid += '\n';
         }
         resetGame();
-        timers.schedule(handlePlayerMovement, 2000);
+        timers.schedule(handlePlayerMovement, gameSettings.playerTick);
         timers.schedule(handleGhostMovement, 2000);
 
         matrix.afterSync((mat, dt, t) => {
@@ -230,7 +238,8 @@ function init (state){
         const key = bytes.toString();
         if (key === '\u0003') process.exit();
         if (key === 'x') detachInput?.();
-        if (gameState && /^[wasd]$/.test(key)) gameState.inputs.push(key);
+        const direction = terminalDirections.get(key);
+        if (direction) move(direction);
         process.stdout.write(key);
       }
 
@@ -248,11 +257,13 @@ function init (state){
 
 function deactivate() {
   activation++;
+  manualControl = false;
+  pendingDirection = undefined;
   detachInput?.();
   timers.clear();
 }
 
 
-let Munchman = { init, deactivate };
+const Munchman = { init, deactivate, move };
 
 export { Munchman };

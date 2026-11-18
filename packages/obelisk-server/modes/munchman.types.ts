@@ -39,7 +39,6 @@ interface MunchGameState {
   field: string[][],
   sickoMode: boolean,
   ghosts: Ghost[],
-  inputs: string[],
   player: Player,
   animations: {
     ghostOffset: number
@@ -56,14 +55,12 @@ interface MunchGameSettings {
 class Player {
   x: number;
   y: number;
-  intent: Coordinate;
   previous: Coordinate;
   lives: number;
 
   constructor() {
     this.x = 1;
     this.y = 1;
-    this.intent = {x: 1, y: 1};
     this.previous = {x: 1, y: 1};
     this.lives = 3;
   }

@@ -39,6 +39,34 @@ test('selects Pong after assignment and keeps the connection when navigating hom
   expect(socket.disconnect).toHaveBeenCalledTimes(1);
 });
 
+test('Munchman opens its browser controls and sends keyboard and directional input', () => {
+  const socket = Object.assign(new EventEmitter(), {
+    connected: true,
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  });
+  vi.mocked(io).mockReturnValue(socket);
+  const send = vi.spyOn(socket, 'emit');
+  render(<App />);
+
+  act(() => socket.emit('obeliskAssignUser', 0));
+  fireEvent.click(screen.getByRole('button', { name: 'munchman' }));
+  expect(send).toHaveBeenCalledWith('changeMode', 'munchman');
+  act(() => socket.emit('obeliskInitController', 'munchman'));
+
+  expect(window.location.pathname).toBe('/controller/munchman');
+  fireEvent.keyDown(window, { key: 'ArrowRight' });
+  expect(send).toHaveBeenCalledWith('munchman:move', 'right');
+  fireEvent.keyDown(window, { key: 'w' });
+  expect(send).toHaveBeenCalledWith('munchman:move', 'up');
+  fireEvent.click(screen.getByRole('button', { name: 'Move down' }));
+  expect(send).toHaveBeenCalledWith('munchman:move', 'down');
+
+  fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+  expect(screen.getByRole('button', { name: 'munchman' })).toBeEnabled();
+  expect(socket.connect).toHaveBeenCalledTimes(1);
+});
+
 test('the dock embeds the standard remote and keeps it mounted when collapsed', () => {
   window.history.replaceState({}, '', '/display');
   try {

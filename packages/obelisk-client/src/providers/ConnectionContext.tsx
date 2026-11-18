@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
+import { MUNCHMAN_CONTROLLER_PATH } from '../../../../shared/munchman';
 
 interface ConnectionState {
   socket: Socket;
@@ -15,11 +16,14 @@ export function ConnectProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [socket] = useState(() => io({ autoConnect: false }));
   const [user, setUser] = useState(-1);
-  const openController = useEffectEvent(() => navigate('/controller'));
+  const openController = useEffectEvent((mode: unknown) => {
+    if (mode === 'pong') navigate('/controller');
+    if (mode === 'munchman') navigate(MUNCHMAN_CONTROLLER_PATH);
+  });
 
   useEffect(() => {
     const resetUser = () => setUser(-1);
-    const initController = () => openController();
+    const initController = (mode: unknown) => openController(mode);
 
     socket.on('obeliskAssignUser', setUser);
     socket.on('obeliskInitController', initController);

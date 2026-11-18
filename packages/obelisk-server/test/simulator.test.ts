@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
+import { MUNCHMAN_MOVE } from '../../../shared/munchman';
 import { DISPLAY_FRAME, DISPLAY_NAMESPACE } from '../../../shared/panel';
 import type { PanelFrame } from '../../../shared/panel';
 
@@ -94,11 +95,29 @@ test('the simulator renders real modes and reflects live controller input', { ti
   const space = await firstSpace;
   await waitForFrame(viewer, (frame) => frame.mode === 'space' && !frame.rgb.equals(space.rgb));
 
-  for (const mode of ['pulse', 'lightcycles', 'munchman']) {
+  for (const mode of ['pulse', 'lightcycles']) {
     const frame = waitForFrame(viewer, (frame) => frame.mode === mode && frame.rgb.some(Boolean));
     controller.emit('changeMode', mode);
     await frame;
   }
+
+  const opened = new Promise((resolve) => controller.once('obeliskInitController', resolve));
+  const movedRight = waitForFrame(viewer, (frame) =>
+    frame.mode === 'munchman' && pixel(frame, 2, 1).join() === '255,255,0');
+  controller.emit('changeMode', 'munchman');
+  controller.emit(MUNCHMAN_MOVE, 'right');
+  assert.equal(await opened, 'munchman');
+  const right = await movedRight;
+
+  const afterWall = waitForFrame(viewer, (frame) =>
+    frame.mode === 'munchman' && frame.sequence >= right.sequence + 20);
+  controller.emit(MUNCHMAN_MOVE, 'up');
+  assert.deepEqual(pixel(await afterWall, 2, 1), [255, 255, 0]);
+
+  const movedLeft = waitForFrame(viewer, (frame) =>
+    frame.mode === 'munchman' && pixel(frame, 1, 1).join() === '255,255,0');
+  controller.emit(MUNCHMAN_MOVE, 'left');
+  await movedLeft;
 
   const lowerPaddle = waitForFrame(viewer, (frame) =>
     frame.mode === 'pong' && pixel(frame, 0, 12)[0] === 255 && pixel(frame, 0, 3)[0] === 0);

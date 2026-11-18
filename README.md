@@ -87,8 +87,10 @@ or **3D installation**. Use the docked remote to change modes or play Pong
 alongside the preview. Drag the divider to resize the remote on a wider screen.
 Use **Remote** to collapse or reopen the dock. The dock loads the same remote served at `/` and occupies a
 player slot. The 2D view can show the individual pixel grid. In 3D, drag to orbit, scroll or pinch to zoom,
-and use **Front view** to see the panel head-on. Munchman accepts WASD in the
-simulator terminal when it has an interactive terminal.
+and use **Front view** to see the panel head-on. Select **Munchman** in the
+remote to open its directional pad. Use the pad, arrow keys, or WASD. The keyboard
+also works with focus on the simulator preview. The first input takes over from
+demo movement. WASD also works in the server terminal when it is interactive.
 
 If another server is using the default port, run
 `PORT=3002 npm run simulate` and open <http://127.0.0.1:3002/display>.

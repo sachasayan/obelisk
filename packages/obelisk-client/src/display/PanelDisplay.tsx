@@ -9,6 +9,8 @@ import ViewInArOutlinedIcon from '@mui/icons-material/ViewInArOutlined';
 import ViewSidebarOutlinedIcon from '@mui/icons-material/ViewSidebarOutlined';
 import ViewWeekOutlinedIcon from '@mui/icons-material/ViewWeekOutlined';
 import { io } from 'socket.io-client';
+import { MUNCHMAN_CONTROLLER_PATH, MUNCHMAN_MOVE } from '../../../../shared/munchman';
+import { munchmanDirectionForKey } from '../components/munchman-input';
 import { DISPLAY_FRAME, DISPLAY_NAMESPACE } from '../../../../shared/panel';
 import PanelCanvas from './PanelCanvas';
 import type { DisplayFrame } from './frame';
@@ -39,6 +41,8 @@ export default function PanelDisplay() {
   const [resizing, setResizing] = useState(false);
   const resizeStart = useRef<{ x: number; width: number } | null>(null);
   const viewport = useRef<HTMLElement>(null);
+  const remoteFrame = useRef<HTMLIFrameElement>(null);
+  const mode = frame?.mode;
 
   useEffect(() => {
     const socket = io(DISPLAY_NAMESPACE, { autoConnect: false });
@@ -67,6 +71,22 @@ export default function PanelDisplay() {
     document.addEventListener('fullscreenchange', update);
     return () => document.removeEventListener('fullscreenchange', update);
   }, []);
+
+  useEffect(() => {
+    if (mode !== 'munchman' || status !== 'live') return;
+
+    function forwardMunchmanKey(event: globalThis.KeyboardEvent) {
+      const direction = munchmanDirectionForKey(event);
+      const remote = remoteFrame.current;
+      if (!direction || remote?.contentDocument?.location.pathname !== MUNCHMAN_CONTROLLER_PATH) return;
+
+      event.preventDefault();
+      remote.contentWindow?.postMessage({ type: MUNCHMAN_MOVE, direction }, window.location.origin);
+    }
+
+    window.addEventListener('keydown', forwardMunchmanKey);
+    return () => window.removeEventListener('keydown', forwardMunchmanKey);
+  }, [mode, status]);
 
   function selectView(next: '2d' | '3d') {
     const nextParams = new URLSearchParams(params);
@@ -168,7 +188,7 @@ export default function PanelDisplay() {
             </div>
           </div>
 
-          <div className="panel-viewport">
+          <div className="panel-viewport" tabIndex={mode === 'munchman' ? 0 : undefined}>
             {!frame ? (
               <div className="panel-empty" role="status">
                 <strong>{statusText[status]}</strong>
@@ -207,7 +227,7 @@ export default function PanelDisplay() {
             <SettingsRemoteOutlinedIcon aria-hidden="true" />
             <h2>Remote</h2>
           </header>
-          <iframe src="/" title="Obelisk remote" />
+          <iframe ref={remoteFrame} src="/" title="Obelisk remote" />
         </aside>
       </div>
 

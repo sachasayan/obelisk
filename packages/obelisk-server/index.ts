@@ -5,6 +5,8 @@ import express from 'express';
 import { Server } from 'socket.io';
 import type { Socket } from 'socket.io';
 import type { FontInstance } from 'rpi-led-matrix';
+import { isMunchmanDirection, MUNCHMAN_CONTROLLER_PATH, MUNCHMAN_MOVE } from '../../shared/munchman';
+import type { MunchmanDirection } from '../../shared/munchman';
 import { DISPLAY_CAPABILITY, DISPLAY_FRAME, DISPLAY_NAMESPACE } from '../../shared/panel';
 import { config, getHardwareOptions, panelOptions } from './config';
 import { BitmapFont } from './panel/bitmap-font';
@@ -22,6 +24,7 @@ export function createControllerServer(
   playerData: (PlayerData | undefined)[],
   changeMode: (mode: ModeName) => void,
   display?: VirtualMatrix,
+  moveMunchman?: (direction: MunchmanDirection) => void,
 ) {
   const app = express();
   const http = createServer(app);
@@ -45,7 +48,11 @@ export function createControllerServer(
       if (!mode) return;
 
       changeMode(mode);
-      if (mode === 'pong') socket.emit('obeliskInitController', 'pong');
+      if (mode === 'pong' || mode === 'munchman') socket.emit('obeliskInitController', mode);
+    });
+
+    socket.on(MUNCHMAN_MOVE, (value: unknown) => {
+      if (isMunchmanDirection(value)) moveMunchman?.(value);
     });
 
     socket.on('drawing', (value: { y?: unknown } | null) => {
@@ -78,7 +85,7 @@ export function createControllerServer(
 
   const clientBuild = resolve(__dirname, '../obelisk-client/build');
   app.use(express.static(clientBuild));
-  app.get(['/controller', '/display'], (_request, response) => {
+  app.get(['/controller', MUNCHMAN_CONTROLLER_PATH, '/display'], (_request, response) => {
     response.sendFile(join(clientBuild, 'index.html'));
   });
 
@@ -158,7 +165,10 @@ function main() {
       new DynDNSClient(require(dyndnsPath));
     }
 
-    controller = createControllerServer(playerData, changeMode, virtualMatrix);
+    controller = createControllerServer(playerData, changeMode, virtualMatrix, (direction) => {
+      const game = modes.munchman;
+      if (game && activeMode === game) game.move(direction);
+    });
     const { http } = controller;
     const port = Number(process.env.PORT ?? 3001);
     const host = process.env.HOST ?? '127.0.0.1';

@@ -1,8 +1,10 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { MUNCHMAN_CONTROLLER_PATH } from '../../../shared/munchman';
 import './App.css';
 import Controller from './components/Controller';
 import InfoBar from './components/InfoBar';
 import ModeSelector from './components/ModeSelector';
+import MunchmanController from './components/MunchmanController';
 import PanelDisplay from './display/PanelDisplay';
 import SimulatorLink from './display/SimulatorLink';
 import { ConnectProvider } from './providers/ConnectionContext';
@@ -18,6 +20,7 @@ function ControllerApp() {
         <Routes>
           <Route path="/" element={<ModeSelector />} />
           <Route path="/controller" element={<Controller />} />
+          <Route path={MUNCHMAN_CONTROLLER_PATH} element={<MunchmanController />} />
         </Routes>
       </div>
     </ConnectProvider>
