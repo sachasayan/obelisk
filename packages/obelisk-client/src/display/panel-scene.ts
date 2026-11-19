@@ -1,10 +1,11 @@
 import {
-  ACESFilmicToneMapping, BoxGeometry, DataTexture, FogExp2, Group, Mesh, MeshStandardMaterial,
-  PCFShadowMap, PerspectiveCamera, PlaneGeometry, RGBAFormat, Scene, ShaderMaterial, SRGBColorSpace,
-  Vector2, WebGLRenderer,
+  ACESFilmicToneMapping, BoxGeometry, DataTexture, EquirectangularReflectionMapping, FogExp2, Group,
+  Mesh, MeshStandardMaterial, PCFShadowMap, PerspectiveCamera, PlaneGeometry, RGBAFormat, Scene,
+  ShaderMaterial, SRGBColorSpace, Vector2, WebGLRenderer,
 } from 'three';
 import type { WebGLRenderTarget } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
@@ -63,7 +64,7 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
   const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.65);
   renderer.setPixelRatio(pixelRatio);
   renderer.toneMapping = ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.03;
+  renderer.toneMappingExposure = 1.11;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFShadowMap;
   renderer.shadowMap.autoUpdate = false;
@@ -75,9 +76,9 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
   const scene = new Scene();
   const camera = new PerspectiveCamera(47, 1, .35, Math.max(2000, Math.max(width, height) * 12));
   camera.layers.enable(hazeLayer);
-  const room = createPanelRoom({ width, height, tileWidth, tileHeight }, Math.min(8, renderer.capabilities.getMaxAnisotropy()), requestRender);
+  const room = createPanelRoom({ width, height, tileWidth, tileHeight }, renderer, requestRender);
   scene.background = room.background;
-  scene.fog = new FogExp2(room.background, .00135 / room.scale);
+  scene.fog = new FogExp2(room.background, .001 / room.scale);
   scene.add(room.room);
 
   const supportsHalfFloat = renderer.extensions.has('EXT_color_buffer_float') || renderer.extensions.has('EXT_color_buffer_half_float');
@@ -86,7 +87,7 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
   const bloom = composer && new UnrealBloomPass(new Vector2(1, 1), .26, .57, 1.08);
   const output = composer && new OutputPass();
   if (composer && occlusion && bloom && output) {
-    occlusion.blendIntensity = .57;
+    occlusion.blendIntensity = .46;
     occlusion.updateGtaoMaterial({ radius: 8 * room.scale, thickness: 2.6 * room.scale, samples: 8, distanceFallOff: .65 });
     occlusion.updatePdMaterial({ radius: 3, samples: 8 });
     composer.addPass(new RenderPass(scene, camera));
@@ -147,8 +148,18 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
   }
 
   let requestedFrame = 0;
+  let disposed = false;
+  const environment = supportsHalfFloat ? new HDRLoader().load('/room/studio.hdr', (texture) => {
+    if (disposed) return;
+    texture.mapping = EquirectangularReflectionMapping;
+    scene.environment = texture;
+    scene.environmentIntensity = .2;
+    scene.environmentRotation.y = 2.64;
+    requestRender();
+  }) : undefined;
+
   function requestRender() {
-    if (requestedFrame) return;
+    if (disposed || requestedFrame) return;
     requestedFrame = window.requestAnimationFrame(() => {
       requestedFrame = 0;
       if (composer) composer.render();
@@ -160,13 +171,13 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
     const fov = camera.fov * Math.PI / 180;
     return Math.max(
       width / (1.36 * Math.tan(fov / 2) * aspect),
-      (height + room.scale * 117) / (1.47 * Math.tan(fov / 2)),
+      (height + room.scale * 134) / (1.42 * Math.tan(fov / 2)),
     );
   }
 
   function setView(front: boolean) {
     const distance = fitDistance(camera.aspect);
-    const y = front ? 0 : -room.scale * 3;
+    const y = front ? 0 : -room.scale * 6;
     controls.target.set(0, y, 0);
     camera.position.set(
       front ? 0 : -Math.min(distance * .22, room.scale * 73),
@@ -208,9 +219,11 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
     paint(frame: DisplayFrame) {
       writeRgba(frame, image);
       texture.needsUpdate = true;
+      room.updatePanelSpill(image);
       requestRender();
     },
     dispose() {
+      disposed = true;
       observer.disconnect();
       window.cancelAnimationFrame(requestedFrame);
       controls.dispose();
@@ -219,6 +232,8 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
       body.dispose();
       railGeometry.dispose();
       room.dispose();
+      scene.environment = null;
+      environment?.dispose();
       output?.dispose();
       bloom?.dispose();
       occlusion?.dispose();

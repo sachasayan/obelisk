@@ -259,6 +259,7 @@
 }
 
 .panel-camera-buttons { pointer-events: auto; }
+.panel-asset-credits { color: var(--panel-muted); text-decoration: none; }
 .panel-three-fallback { position: absolute; inset: 0; }
 
 .panel-empty {

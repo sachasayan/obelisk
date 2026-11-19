@@ -41,6 +41,7 @@ export default function PanelThree({ frame }: { frame: DisplayFrame }) {
           <div className="panel-camera-buttons">
             <button type="button" className="panel-tool" onClick={() => scene.current?.front()}>Front view</button>
             <button type="button" className="panel-tool" onClick={() => scene.current?.reset()}>Reset camera</button>
+            <a className="panel-tool panel-asset-credits" href="/room/credits.html" target="_blank" rel="noreferrer">Asset credits</a>
           </div>
         </div>
       )}

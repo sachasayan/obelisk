@@ -85,7 +85,9 @@ npm run simulate
 ```
 
 Open <http://127.0.0.1:3001/display> for the live panel and choose **2D panel**
-or **3D installation**. The 3D view mounts the live tiles in an oak and charcoal room.
+or **3D installation**. The 3D view mounts the live tiles in an oak and charcoal room
+with carpet, a furnished seating area, and studio lighting. See the
+[3D room asset credits](packages/obelisk-client/public/room/credits.html) for model and material sources.
 Use **Visuals** or **Games** in the docked remote to switch modes, or choose
 **Turn display off** to stop the current mode. Drag the divider to resize the remote on a wider screen.
 Use **Remote** to collapse or reopen the dock. The dock loads the same remote served at `/` and occupies a
