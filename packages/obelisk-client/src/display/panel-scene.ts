@@ -151,7 +151,7 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
 
   let requestedFrame = 0;
   let disposed = false;
-  const environment = supportsHalfFloat ? new HDRLoader().load('/room/studio.hdr', (texture) => {
+  const environment = supportsHalfFloat ? new HDRLoader().load(import.meta.env.BASE_URL + 'room/studio.hdr', (texture) => {
     if (disposed) return;
     texture.mapping = EquirectangularReflectionMapping;
     scene.environment = texture;
@@ -213,6 +213,12 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
   setView(false);
 
   return {
+    setGestureZoom(enabled: boolean) {
+      controls.enableZoom = enabled;
+      renderer.domElement.style.touchAction = enabled ? 'none' : 'pan-y pinch-zoom';
+    },
+    zoomIn: () => controls.dollyIn(0.8),
+    zoomOut: () => controls.dollyOut(0.8),
     front: () => setView(true),
     reset: () => setView(false),
     paint(frame: DisplayFrame) {

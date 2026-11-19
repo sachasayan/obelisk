@@ -3,7 +3,7 @@ import { transit_realtime } from 'gtfs-realtime-bindings';
 const tripUpdatesUrl = 'https://bustime.ttc.ca/gtfsrt/trips';
 const tripStatus = transit_realtime.TripDescriptor.ScheduleRelationship;
 const stopStatus = transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship;
-const defaultStopId = '8196'; // TTC stop code 816, College St at Borden St.
+export const defaultStopId = '8196'; // TTC stop code 816, College St at Borden St.
 
 export function nextArrivalMinutes(bytes: Uint8Array, stopId: string, now = Date.now()) {
   const feed = transit_realtime.FeedMessage.decode(bytes);

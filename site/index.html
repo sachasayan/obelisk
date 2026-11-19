@@ -46,27 +46,17 @@
     <section class="wrap hero" aria-labelledby="hero-title">
       <div class="hero-copy">
         <p class="eyebrow">Open source · Raspberry Pi</p>
-        <h1 id="hero-title">An LED wall<br>you can <em>play.</em></h1>
+        <h1 id="hero-title">An LED wall you can <em>play.</em></h1>
         <p class="lede">Obelisk turns modular RGB panels into a display for clocks, visual effects, and games. Pick a mode or steer a game from your phone.</p>
         <div class="actions">
-          <a class="button button-primary" href="/docs/#simulator">Run the simulator</a>
+          <a class="button button-primary" href="#simulator">Run the simulator</a>
           <a class="button button-outline" href="https://github.com/sachasayan/obelisk/tree/maintenance/modernize">View on GitHub</a>
         </div>
       </div>
-      <figure class="hero-preview" data-gallery aria-label="Obelisk product views">
-        <div class="hero-window">
-          <img data-view="room" src="/assets/room.webp" alt="A mint LED clock on an oak wall facing two sofas, with the Clock controls open beside the 3D simulator" width="1280" height="814" fetchpriority="high">
-          <img data-view="pixels" src="/assets/pixels.webp" alt="The 2D LED panel showing a starfield beside the Obelisk mode selector" width="1280" height="814" decoding="async" loading="lazy" hidden>
-        </div>
-        <figcaption>
-          <span data-caption="room">Live 3D simulator</span>
-          <span data-caption="pixels" hidden>Live 2D simulator with docked remote</span>
-          <div class="view-toggle" data-gallery-controls role="group" aria-label="Simulator view" hidden>
-            <button type="button" data-select-view="room" aria-pressed="true">3D room</button>
-            <button type="button" data-select-view="pixels" aria-pressed="false">2D pixels</button>
-          </div>
-        </figcaption>
-      </figure>
+      <div class="live-simulator" id="simulator">
+        <iframe src="/simulator/#/display" title="Live Obelisk simulator and remote" allowfullscreen></iframe>
+        <noscript><p>Enable JavaScript to use the live simulator. <a href="/docs/#simulator">Read the simulator guide</a>.</p></noscript>
+      </div>
     </section>
 
     <section id="experience" class="section feature-section" aria-labelledby="experience-title">
@@ -152,7 +142,7 @@ npm run simulate</code></pre>
       </details>
       <details>
         <summary>Does this website control my display?</summary>
-        <p>The remote is served by your own Obelisk instance. Use that instance’s address on your local network to control the panel.</p>
+        <p>The simulator on this page runs in your browser. To control a physical panel, open your own Obelisk instance’s address on your local network.</p>
       </details>
       <details>
         <summary>Can I write my own mode?</summary>

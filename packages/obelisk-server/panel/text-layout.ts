@@ -1,6 +1,6 @@
 import type { ModeState } from './types';
 
-const fontNames = ['spleen-16x32', 'spleen-12x24', 'spleen-8x16', '5x7', '4x6', 'tom-thumb'];
+export const fittedFontCandidates = ['spleen-16x32', 'spleen-12x24', 'spleen-8x16', '5x7', '4x6', 'tom-thumb'];
 
 interface TextBox {
   width: number;
@@ -14,7 +14,7 @@ export function drawFittedText(
   labels: readonly string[],
   { width, height, x = 0, y = 0 }: TextBox,
   color: number,
-  candidates: readonly string[] = fontNames,
+  candidates: readonly string[] = fittedFontCandidates,
 ) {
   for (const name of candidates) {
     const font = loadFont(name);

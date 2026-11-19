@@ -1,4 +1,3 @@
-import { performance } from 'node:perf_hooks';
 import type { Color, FontInstance } from 'rpi-led-matrix';
 import type { PanelFrame, PanelGeometry } from '../../../shared/panel';
 import { BitmapFont } from './bitmap-font';
@@ -13,7 +12,7 @@ function rgb(color: Color | number): [number, number, number] {
 }
 
 export class VirtualMatrix implements PanelMatrix {
-  private buffer: Buffer;
+  private buffer: Uint8Array<ArrayBuffer>;
   private readonly started = performance.now();
   private lastSync = this.started - frameInterval;
   private presentTimer?: NodeJS.Timeout;
@@ -23,21 +22,21 @@ export class VirtualMatrix implements PanelMatrix {
   private hook?: Parameters<PanelMatrix['afterSync']>[0];
   private level: number;
   private mode = 'clock';
-  private frame: PanelFrame<Buffer>;
+  private frame: PanelFrame<Uint8Array<ArrayBuffer>>;
 
   constructor(
     private geometry: PanelGeometry,
     brightness: number,
-    private readonly publish: (frame: PanelFrame<Buffer>) => void,
+    private readonly publish: (frame: PanelFrame<Uint8Array<ArrayBuffer>>) => void,
   ) {
-    this.buffer = Buffer.alloc(this.width() * this.height() * 3);
+    this.buffer = new Uint8Array(this.width() * this.height() * 3);
     this.level = brightness;
     this.frame = this.snapshot(0);
   }
 
   configure(geometry: PanelGeometry) {
     this.geometry = geometry;
-    this.buffer = Buffer.alloc(this.width() * this.height() * 3);
+    this.buffer = new Uint8Array(this.width() * this.height() * 3);
   }
 
   width() { return this.geometry.width; }
@@ -56,7 +55,10 @@ export class VirtualMatrix implements PanelMatrix {
   bgColor(color: Color | number) { this.background = rgb(color); return this; }
   fgColor(color: Color | number) { this.foreground = rgb(color); return this; }
   clear() { this.buffer.fill(0); return this; }
-  fill() { this.buffer.fill(Buffer.from(this.foreground)); return this; }
+  fill() {
+    for (let i = 0; i < this.buffer.length; i += 3) this.buffer.set(this.foreground, i);
+    return this;
+  }
 
   font(font: FontInstance) {
     if (!(font instanceof BitmapFont)) throw new Error('The virtual panel requires a bitmap font.');
@@ -137,10 +139,10 @@ export class VirtualMatrix implements PanelMatrix {
     return this;
   }
 
-  private snapshot(sequence: number): PanelFrame<Buffer> {
+  private snapshot(sequence: number): PanelFrame<Uint8Array<ArrayBuffer>> {
     return {
       ...this.geometry,
-      rgb: Buffer.from(this.buffer),
+      rgb: this.buffer.slice(),
       brightness: this.level,
       mode: this.mode,
       sequence,

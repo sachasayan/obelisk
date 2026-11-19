@@ -1,3 +1,7 @@
 [build]
-  base = "site"
-  publish = "."
+  command = "npm run sitebuild"
+  publish = "site"
+
+[build.environment]
+  NODE_VERSION = "24"
+  NPM_FLAGS = "--ignore-scripts"

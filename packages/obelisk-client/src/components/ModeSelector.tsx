@@ -20,7 +20,7 @@ export default function ModeSelector() {
           <div className="ModeSelector-grid">
             {modes.map(([mode, label]) => (
               <button type="button" className="ModePoster" key={mode} disabled={disabled} onClick={() => select(mode)}>
-                <img src={`/posters/${mode}.webp`} alt="" decoding="async" />
+                <img src={`${import.meta.env.BASE_URL}posters/${mode}.webp`} alt="" decoding="async" />
                 <span>{label}</span>
               </button>
             ))}

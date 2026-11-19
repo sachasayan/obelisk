@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { DisplayFrame } from './frame';
 import { createPanelScene } from './panel-scene';
 
-export default function PanelThree({ frame }: { frame: DisplayFrame }) {
+export default function PanelThree({ frame, gestureZoom }: { frame: DisplayFrame; gestureZoom: boolean }) {
   const container = useRef<HTMLDivElement>(null);
   const scene = useRef<ReturnType<typeof createPanelScene> | null>(null);
   const [unavailable, setUnavailable] = useState(false);
@@ -24,6 +24,10 @@ export default function PanelThree({ frame }: { frame: DisplayFrame }) {
   }, [width, height, tileWidth, tileHeight]);
 
   useEffect(() => {
+    scene.current?.setGestureZoom(gestureZoom);
+  }, [gestureZoom, width, height, tileWidth, tileHeight]);
+
+  useEffect(() => {
     scene.current?.paint(frame);
   }, [frame]);
 
@@ -37,11 +41,13 @@ export default function PanelThree({ frame }: { frame: DisplayFrame }) {
         </div>
       ) : (
         <div className="panel-camera">
-          <p>Drag to orbit · Scroll or pinch to zoom</p>
+          <p>{gestureZoom ? 'Drag to orbit · Scroll or pinch to zoom' : 'Drag to orbit · Scroll the page'}</p>
           <div className="panel-camera-buttons">
+            <button type="button" className="panel-tool panel-zoom" aria-label="Zoom in" title="Zoom in" onClick={() => scene.current?.zoomIn()}>+</button>
+            <button type="button" className="panel-tool panel-zoom" aria-label="Zoom out" title="Zoom out" onClick={() => scene.current?.zoomOut()}>−</button>
             <button type="button" className="panel-tool" onClick={() => scene.current?.front()}>Front view</button>
             <button type="button" className="panel-tool" onClick={() => scene.current?.reset()}>Reset camera</button>
-            <a className="panel-tool panel-asset-credits" href="/room/credits.html" target="_blank" rel="noreferrer">Asset credits</a>
+            <a className="panel-tool panel-asset-credits" href={import.meta.env.BASE_URL + 'room/credits.html'} target="_blank" rel="noreferrer">Asset credits</a>
           </div>
         </div>
       )}

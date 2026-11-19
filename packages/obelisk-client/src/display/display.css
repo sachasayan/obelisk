@@ -254,7 +254,8 @@
   font-size: .7rem;
 }
 
-.panel-camera-buttons { pointer-events: auto; }
+.panel-camera-buttons { flex-wrap: wrap; pointer-events: auto; }
+.panel-app .panel-zoom { justify-content: center; min-width: 2rem; min-height: 2rem; font-size: 1rem; }
 .panel-asset-credits { color: var(--panel-muted); text-decoration: none; }
 .panel-three-fallback { position: absolute; inset: 0; }
 

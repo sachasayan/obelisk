@@ -8,6 +8,7 @@
 
 # production
 /packages/obelisk-client/build
+/site/simulator
 
 # misc
 .DS_Store

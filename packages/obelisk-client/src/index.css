@@ -13,6 +13,11 @@ html, body {
   overscroll-behavior: contain;
 }
 
+/* Continue scrolling the homepage at the edges of both nested frames. */
+html.embedded-simulator, html.embedded-simulator body {
+  overscroll-behavior-y: auto;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

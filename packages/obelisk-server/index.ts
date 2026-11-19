@@ -1,20 +1,19 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join, resolve } from 'node:path';
 import express from 'express';
 import { Server } from 'socket.io';
-import type { Socket } from 'socket.io';
 import type { FontInstance } from 'rpi-led-matrix';
-import { controllerPath, controllerPaths, findMode } from '../../shared/modes';
+import { controllerPaths, findMode } from '../../shared/modes';
 import type { ModeName } from '../../shared/modes';
-import { GAME_INPUT, GAME_JOIN, GAME_LEAVE, GAME_STATUS, isGameAction, isGameMode } from '../../shared/games';
-import { MINUTES_PER_DAY, SIMULATOR_SETTINGS, simulatorGeometry, simulatorLayout, UPDATE_SIMULATOR_SETTINGS } from '../../shared/simulator';
+import { SIMULATOR_SETTINGS, simulatorLayout, UPDATE_SIMULATOR_SETTINGS } from '../../shared/simulator';
 import type { SimulatorSettings } from '../../shared/simulator';
 import { DISPLAY_CAPABILITY, DISPLAY_FRAME, DISPLAY_NAMESPACE } from '../../shared/panel';
-import { applyVisualSettings, defaultVisualSettings, UPDATE_VISUAL_SETTINGS, VISUAL_SETTINGS } from '../../shared/visual-settings';
+import { defaultVisualSettings } from '../../shared/visual-settings';
 import { config, getHardwareOptions, panelOptions } from './config';
 import { createGameSession } from './games/session';
-import { readSunlightClock } from './modes/sunlight.index';
+import { createPanelRuntime } from './panel/runtime';
+import { createControllerHub } from './controller-hub';
 import { BitmapFont } from './panel/bitmap-font';
 import { resolveSimLayout } from './panel/sim-layout';
 import type { PanelMatrix, PlayerData } from './panel/types';
@@ -38,69 +37,8 @@ export function createControllerServer(
       done(null, !origin || Boolean(host && URL.parse(origin)?.host === host));
     },
   });
-  const sockets: Socket[] = [];
-  let visualSettings = defaultVisualSettings;
-
-  io.on('connection', (socket) => {
-    const player = sockets.push(socket) - 1;
-    playerData.push(undefined);
-    socket.emit('obeliskAssignUser', player);
-    socket.emit(VISUAL_SETTINGS, visualSettings);
-
-    socket.on('changeMode', (value: unknown) => {
-      if (typeof value !== 'string') return;
-
-      const mode = findMode(value);
-      if (!mode) return;
-
-      changeMode(mode);
-      if (isGameMode(mode)) sendGameStatus(socket);
-      if (controllerPath(mode)) socket.emit('obeliskInitController', mode);
-    });
-
-    socket.on(UPDATE_VISUAL_SETTINGS, (value: unknown) => {
-      const next = applyVisualSettings(visualSettings, value);
-      if (next === visualSettings) return;
-      visualSettings = next;
-      io.emit(VISUAL_SETTINGS, visualSettings);
-    });
-
-    socket.on(GAME_JOIN, (next: unknown) => {
-      if (!isGameMode(next)) return;
-      game?.join(next, socket.id);
-      sendGameStatus(socket);
-    });
-
-    socket.on(GAME_LEAVE, () => game?.leave(socket.id));
-    socket.on(GAME_INPUT, (value: unknown) => {
-      if (value && typeof value === 'object' && 'mode' in value && 'action' in value
-          && isGameMode(value.mode) && isGameAction(value.action)) {
-        game?.input(value.mode, socket.id, value.action);
-      }
-    });
-
-    socket.on('drawing', (value: { y?: unknown } | null) => {
-      const y = value?.y;
-      if (typeof y !== 'number' || !Number.isFinite(y) || y < 0 || y > 1) return;
-
-      const player = sockets.indexOf(socket);
-      if (player !== -1) playerData[player] = { y };
-    });
-
-    socket.on('disconnect', () => {
-      const player = sockets.indexOf(socket);
-      if (player === -1) return;
-
-      sockets.splice(player, 1);
-      playerData.splice(player, 1);
-      game?.leave(socket.id);
-      sockets.forEach((client, index) => client.emit('obeliskAssignUser', index));
-    });
-  });
-
-  function sendGameStatus(socket: Socket) {
-    socket.emit(GAME_STATUS, game?.status(socket.id) ?? null);
-  }
+  const hub = createControllerHub(playerData, changeMode, game);
+  io.on('connection', hub.connect);
 
   if (display) {
     const viewers = io.of(DISPLAY_NAMESPACE);
@@ -126,12 +64,9 @@ export function createControllerServer(
 
   return {
     http, io,
-    getVisualSettings: () => visualSettings,
-    refreshGame: () => sockets.forEach(sendGameStatus),
+    getVisualSettings: hub.getVisualSettings, refreshGame: hub.refreshGame,
   };
 }
-
-type StartMode = ModeName | 'test';
 
 function main() {
   const simulate = process.argv.includes('--simulate');
@@ -140,14 +75,13 @@ function main() {
   if (!startMode) throw new Error('OBELISK_START_MODE must be a display mode, test, or off.');
   const playerData: (PlayerData | undefined)[] = [];
   const fonts = new Map<string, FontInstance>();
-  let createFont = (name: string, path: string): FontInstance => new BitmapFont(name, path);
+  let createFont = (name: string, path: string): FontInstance => new BitmapFont(name, path, readFileSync(path, 'utf8'));
   let controller: ReturnType<typeof createControllerServer> | undefined;
   let matrix: PanelMatrix | undefined;
 
   const game = createGameSession(() => controller?.refreshGame());
-  let simulatedMinute: number | null = null;
-  let brightness = panelOptions.brightness;
-  let geometry = resolveSimLayout(simulate ? process.env.OBELISK_SIM_LAYOUT : undefined, {
+  const brightness = panelOptions.brightness;
+  const geometry = resolveSimLayout(simulate ? process.env.OBELISK_SIM_LAYOUT : undefined, {
     width: panelOptions.cols * panelOptions.chainLength,
     height: panelOptions.rows * panelOptions.parallel,
     tileWidth: panelOptions.cols,
@@ -183,75 +117,13 @@ function main() {
   }
 
   const panelModes = matrix ? require('./modes') as typeof import('./modes') : undefined;
-  const modes = {
-    billboard: panelModes?.Billboard,
-    clock: panelModes?.Clock,
-    'lava-lamp': panelModes?.LavaLamp,
-    lightcycles: panelModes?.Lightcycles,
-    pong: panelModes?.Pong,
-    pulse: panelModes?.Pulse,
-    space: panelModes?.Space,
-    sunlight: panelModes?.Sunlight,
-    test: panelModes?.Test,
-    exit: undefined,
-  };
-  let activeMode: StartMode | undefined;
-
-  function changeMode(mode: StartMode, resize = false) {
-    if (!matrix || (!resize && isGameMode(mode) && activeMode === mode)) return;
-    if (config.verbose) console.log('Changing mode to', mode);
-    const preserveSeats = resize && activeMode === mode && isGameMode(mode);
-    if (isGameMode(activeMode)) {
-      if (!preserveSeats) game.stop();
-    } else if (activeMode) modes[activeMode]?.deactivate();
-
-    activeMode = mode;
-    virtualMatrix?.setMode(mode);
-    matrix.afterSync(() => {});
-    matrix.brightness(brightness).clear();
-    const state = {
-      matrix, playerData, loadFont,
-      visualSettings: () => controller?.getVisualSettings() ?? defaultVisualSettings,
-      simulatedMinute: simulate ? () => simulatedMinute : undefined,
-    };
-
-    if (isGameMode(mode)) game.start(mode, state, preserveSeats);
-    else if (modes[mode]) modes[mode].init(state);
-    else matrix.sync();
-  }
-
-  function getSimulatorSettings(): SimulatorSettings {
-    const { sunset, timeZone } = readSunlightClock();
-    return {
-      minute: simulatedMinute, sunset: sunset < MINUTES_PER_DAY ? sunset : null,
-      timeZone, layout: simulatorLayout(geometry), brightness,
-    };
-  }
-
-  function updateSimulatorSettings(value: unknown) {
-    if (!virtualMatrix || !value || typeof value !== 'object') return;
-    let updateTime = false;
-    let previewSunlight = false;
-    if ('minute' in value) {
-      const { minute } = value;
-      if (minute === null || (typeof minute === 'number' && Number.isInteger(minute) && minute >= 0 && minute <= MINUTES_PER_DAY)) {
-        updateTime = minute !== simulatedMinute;
-        simulatedMinute = typeof minute === 'number' ? minute : null;
-        previewSunlight = simulatedMinute !== null;
-      }
-    }
-    if ('brightness' in value && typeof value.brightness === 'number' && Number.isInteger(value.brightness)
-        && value.brightness >= 0 && value.brightness <= 100) {
-      brightness = value.brightness;
-      virtualMatrix.brightness(brightness).sync();
-    }
-    const next = 'layout' in value ? simulatorGeometry(value.layout) : undefined;
-    if (next && simulatorLayout(next) !== simulatorLayout(geometry)) {
-      geometry = next;
-      virtualMatrix.configure(next);
-      changeMode(previewSunlight ? 'sunlight' : activeMode ?? startMode, true);
-    } else if (previewSunlight && activeMode !== 'sunlight') changeMode('sunlight');
-    else if (updateTime && activeMode === 'sunlight') modes.sunlight?.refresh();
+  const runtime = createPanelRuntime({
+    matrix, virtualMatrix, panelModes, game, playerData, loadFont, startMode, geometry, brightness,
+    visualSettings: () => controller?.getVisualSettings() ?? defaultVisualSettings,
+  });
+  function changeMode(mode: ModeName | 'test') {
+    if (config.verbose && matrix) console.log('Changing mode to', mode);
+    runtime.changeMode(mode);
   }
 
   if (config.runServer || simulate) {
@@ -262,7 +134,7 @@ function main() {
     }
 
     controller = createControllerServer(playerData, changeMode, virtualMatrix && {
-      matrix: virtualMatrix, settings: getSimulatorSettings, update: updateSimulatorSettings,
+      matrix: virtualMatrix, settings: runtime.getSimulatorSettings, update: runtime.updateSimulatorSettings,
     }, game);
     const { http } = controller;
     const port = Number(process.env.PORT ?? 3001);

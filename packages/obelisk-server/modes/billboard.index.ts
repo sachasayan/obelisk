@@ -1,8 +1,7 @@
-import type { PNG } from 'pngjs';
 import { drawFittedText } from '../panel/text-layout';
 import type { ModeState } from '../panel/types';
-import { forEachOpaquePixel, readPng } from '../png';
-import { fetchArrivalMinutes } from '../ttc';
+import { forEachOpaquePixel } from '../panel/image';
+import { loadStreetcar, fetchArrivalMinutes } from './billboard-inputs';
 
 const torontoTime = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'America/Toronto',
@@ -19,7 +18,7 @@ function init(state: ModeState) {
   const height = matrix.height();
   const activation = new AbortController();
   const { signal } = activation;
-  let image: PNG | undefined;
+  let image: Parameters<typeof forEachOpaquePixel>[0] | undefined;
   let minutes: number | undefined;
   let frameTimer: NodeJS.Timeout | undefined;
   let updateTimer: NodeJS.Timeout | undefined;
@@ -75,7 +74,7 @@ function init(state: ModeState) {
     frameTimer = setTimeout(paint, 1000 - now.getMilliseconds());
   }
 
-  readPng('streetcar.png')
+  loadStreetcar()
     .then((streetcar) => { image = streetcar; })
     .catch((error) => { if (!signal.aborted) console.error('Could not read the streetcar image:', error); });
   void updateArrival();

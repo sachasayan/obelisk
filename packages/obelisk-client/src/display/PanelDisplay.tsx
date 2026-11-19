@@ -22,6 +22,8 @@ import type { DisplayFrame } from './frame';
 import './display.css';
 
 const PanelThree = lazy(() => import('./PanelThree'));
+const website = import.meta.env.MODE === 'website';
+const defaultView = website ? '3d' : '2d';
 const minDockWidth = 248;
 const maxDockWidth = 420;
 
@@ -36,7 +38,8 @@ const statusText: Record<Status, string> = {
 
 export default function PanelDisplay() {
   const [params, setParams] = useSearchParams();
-  const view = params.get('view') === '3d' ? '3d' : '2d';
+  const requestedView = params.get('view');
+  const view = requestedView === '2d' || requestedView === '3d' ? requestedView : defaultView;
   const [frame, setFrame] = useState<DisplayFrame>();
   const [device, setDevice] = useState<SimulatorSettings>();
   const dockTab = params.get('tab') === 'device' ? 'device' : 'remote';
@@ -88,7 +91,9 @@ export default function PanelDisplay() {
         (mode === 'echo-keys' && event.repeat)) return;
     const action = gameActionForKey(event.nativeEvent);
     const remote = remoteFrame.current;
-    if (!action || remote?.contentDocument?.location.pathname !== controllerPaths[mode]) return;
+    const location = remote?.contentDocument?.location;
+    const path = website ? location?.hash.slice(1) : location?.pathname;
+    if (!action || !remote || path !== controllerPaths[mode]) return;
     event.preventDefault();
     remote.contentWindow?.postMessage({ type: GAME_INPUT, mode, action }, window.location.origin);
   }
@@ -118,8 +123,8 @@ export default function PanelDisplay() {
 
   function selectView(next: '2d' | '3d') {
     const nextParams = new URLSearchParams(params);
-    if (next === '3d') nextParams.set('view', '3d');
-    else nextParams.delete('view');
+    if (next === defaultView) nextParams.delete('view');
+    else nextParams.set('view', next);
     setParams(nextParams, { replace: true });
   }
 
@@ -173,7 +178,7 @@ export default function PanelDisplay() {
     <main className={`panel-app${resizing ? ' panel-app--resizing' : ''}`} style={layout}>
       <header className="panel-header">
         <div className="panel-identity">
-          <img src="/brand/keystone-mark.svg" alt="" width={197} height={336} />
+          <img src={import.meta.env.BASE_URL + 'brand/keystone-mark.svg'} alt="" width={197} height={336} />
           <h1>Obelisk Simulator</h1>
         </div>
         <button
@@ -226,7 +231,7 @@ export default function PanelDisplay() {
               <PanelCanvas frame={frame} grid={grid} />
             ) : (
               <Suspense fallback={<div className="panel-empty" role="status">Loading 3D view…</div>}>
-                <PanelThree frame={frame} />
+                <PanelThree frame={frame} gestureZoom={!website || window.parent === window || fullscreen} />
               </Suspense>
             )}
           </div>
@@ -262,7 +267,7 @@ export default function PanelDisplay() {
             </button>
           </div>
           <div className="panel-dock-content" role="tabpanel" id="dock-remote" aria-labelledby="dock-tab-remote" hidden={dockTab !== 'remote'}>
-            <iframe ref={remoteFrame} src="/" title="Obelisk remote" />
+            <iframe ref={remoteFrame} src={import.meta.env.BASE_URL} title="Obelisk remote" />
           </div>
           <div className="panel-dock-content" role="tabpanel" id="dock-device" aria-labelledby="dock-tab-device" hidden={dockTab !== 'device'}>
             {device && status === 'live' ? <DeviceSettings settings={device} update={updateDevice} /> :

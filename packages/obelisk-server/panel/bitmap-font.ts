@@ -1,11 +1,10 @@
-import { readFileSync } from 'node:fs';
 import type { FontInstance } from 'rpi-led-matrix';
 
 interface Glyph {
   advance: number;
   height: number;
   offsetY: number;
-  rows: Buffer[];
+  rows: Uint8Array[];
 }
 
 export class BitmapFont implements FontInstance {
@@ -13,8 +12,7 @@ export class BitmapFont implements FontInstance {
   private readonly lineHeight: number;
   private readonly ascent: number;
 
-  constructor(private readonly fontName: string, private readonly filePath: string) {
-    const source = readFileSync(filePath, 'utf8');
+  constructor(private readonly fontName: string, private readonly filePath: string, source: string) {
     const bounds = /^FONTBOUNDINGBOX\s+\d+\s+(\d+)\s+-?\d+\s+(-?\d+)/m.exec(source);
     if (!bounds) throw new Error(`Missing BDF font bounds in ${filePath}`);
     this.lineHeight = Number(bounds[1]);
@@ -32,7 +30,7 @@ export class BitmapFont implements FontInstance {
         advance: Number(advance[1]),
         height,
         offsetY: Number(bounds[2]),
-        rows: rows.map((row) => Buffer.from(row.trim(), 'hex')),
+        rows: rows.map((row) => Uint8Array.from(row.trim().match(/../g) ?? [], (hex) => parseInt(hex, 16))),
       });
     }
   }

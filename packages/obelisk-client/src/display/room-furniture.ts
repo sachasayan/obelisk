@@ -52,11 +52,17 @@ export function loadRoomFurniture(
   });
   // Three also ships these files for unbundled use. Resolve their build URLs locally.
   const textures = new KTX2Loader(manager).setTranscoderPath('/room/').setWorkerLimit(2).detectSupport(renderer);
+  const workerReady = import.meta.env.MODE === 'website' ? textures.init().then(() => {
+    URL.revokeObjectURL(textures.workerSourceURL);
+    textures.workerSourceURL = import.meta.env.BASE_URL + 'texture-worker.js';
+  }) : undefined;
   const loader = new GLTFLoader().setKTX2Loader(textures).setMeshoptDecoder(MeshoptDecoder);
 
   const loads = placements.map(async ({ name, position, size, axis, angle = 0, glow }) => {
     try {
-      const { scene: model } = await loader.loadAsync(`/room/${name}.glb`);
+      await workerReady;
+      if (disposed) return;
+      const { scene: model } = await loader.loadAsync(`${import.meta.env.BASE_URL}room/${name}.glb`);
       if (disposed) {
         disposeModel(model);
         return;

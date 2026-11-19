@@ -1,0 +1,9 @@
+{
+  "extends": "../../obelisk-server/tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node", "vite/client"]
+  },
+  "include": ["*.ts"]
+}

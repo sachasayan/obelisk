@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Route, Routes } from 'react-router-dom';
 import { games, isGameMode } from '../../../shared/games';
 import { controllerPaths } from '../../../shared/modes';
 import './App.css';
@@ -31,13 +31,14 @@ function ControllerApp() {
 }
 
 function App() {
+  const Router = import.meta.env.MODE === 'website' ? HashRouter : BrowserRouter;
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/display" element={<PanelDisplay />} />
         <Route path="*" element={<ControllerApp />} />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
 

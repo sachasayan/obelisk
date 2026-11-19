@@ -64,10 +64,10 @@ export function createPanelRoom(
   }
 
   const loader = new TextureLoader();
-  const grain = loader.load('/textures/oak.webp', invalidate);
-  const normal = loader.load('/textures/oak-normal.webp', invalidate);
-  const carpet = loader.load('/room/carpet.webp', invalidate);
-  const carpetNormal = loader.load('/room/carpet-normal.webp', invalidate);
+  const grain = loader.load(import.meta.env.BASE_URL + 'textures/oak.webp', invalidate);
+  const normal = loader.load(import.meta.env.BASE_URL + 'textures/oak-normal.webp', invalidate);
+  const carpet = loader.load(import.meta.env.BASE_URL + 'room/carpet.webp', invalidate);
+  const carpetNormal = loader.load(import.meta.env.BASE_URL + 'room/carpet-normal.webp', invalidate);
   const textures = [grain, normal, carpet, carpetNormal];
   grain.colorSpace = carpet.colorSpace = SRGBColorSpace;
   const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());

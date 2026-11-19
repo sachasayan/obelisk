@@ -7,8 +7,8 @@ export default function InfoBar() {
   return (
     <header className="Remote-header">
       <h1>
-        <img className="Remote-logo-mark" src="/brand/keystone-mark.svg" alt="" width={197} height={336} />
-        <img className="Remote-logo-wordmark" src="/brand/keystone-wordmark.svg" alt="Obelisk" width={938} height={211} />
+        <img className="Remote-logo-mark" src={import.meta.env.BASE_URL + 'brand/keystone-mark.svg'} alt="" width={197} height={336} />
+        <img className="Remote-logo-wordmark" src={import.meta.env.BASE_URL + 'brand/keystone-wordmark.svg'} alt="Obelisk" width={938} height={211} />
       </h1>
       <div className="Remote-player" role="status">
         <span className={user >= 0 ? 'Remote-player-dot is-connected' : 'Remote-player-dot'} aria-hidden="true" />
