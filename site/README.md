@@ -15,4 +15,4 @@ Open <http://127.0.0.1:8781/>. Netlify publishes this directory without building
 - The mode posters and Keystone marks are copies of the assets used in the remote. When replacing them in the remote, update these exported copies.
 - `social.jpg` is a crop of the 3D simulator capture for link previews.
 
-The hosted site is <https://obelisk-sachasayan.netlify.app/>. To update the manual deployment, upload this directory to the Obelisk project in Netlify. The public site links to the published `maintenance/modernize` branch so the documented simulator commands work.
+The hosted site is <https://obelisk.me/>. To update the manual deployment, upload this directory to the Obelisk project in Netlify. The public site links to the published `maintenance/modernize` branch so the documented simulator commands work.

@@ -1,6 +1,6 @@
 # **|||** Obelisk
 
-[Project website and installation guide](https://obelisk-sachasayan.netlify.app/)
+[Project website and installation guide](https://obelisk.me/)
 
 ![](img/obelisk.jpg)
 
