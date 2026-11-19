@@ -48,6 +48,7 @@ test('selects Pong after assignment and keeps the connection when navigating hom
 });
 
 test('Munchman opens its browser controls and sends keyboard and directional input', () => {
+  const canvas = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
   const socket = Object.assign(new EventEmitter(), {
     connected: true,
     connect: vi.fn(),
@@ -73,6 +74,7 @@ test('Munchman opens its browser controls and sends keyboard and directional inp
   fireEvent.click(screen.getByRole('link', { name: 'Home' }));
   expect(screen.getByRole('button', { name: 'Munchman' })).toBeEnabled();
   expect(socket.connect).toHaveBeenCalledTimes(1);
+  canvas.mockRestore();
 });
 
 test('the dock embeds the standard remote and keeps it mounted when collapsed', () => {

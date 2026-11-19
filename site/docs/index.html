@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0c0e">
+  <title>Installation and controls — Obelisk</title>
+  <meta name="description" content="Run Obelisk’s local simulator, configure a Raspberry Pi LED installation, and use the phone remote.">
+  <link rel="canonical" href="https://obelisk-sachasayan.netlify.app/docs/">
+  <link rel="icon" type="image/svg+xml" href="/assets/keystone-mark.svg">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/site.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/" aria-label="Obelisk home">
+        <img src="/assets/keystone-mark.svg" alt="" width="16" height="27">
+        <img src="/assets/keystone-wordmark.svg" alt="Obelisk" width="92" height="21">
+      </a>
+      <nav aria-label="Main navigation"><a href="/#experience">Explore</a><a href="/#setup">Set up</a><a href="/docs/" aria-current="page">Docs</a></nav>
+      <a class="button button-small button-outline" href="https://github.com/sachasayan/obelisk/tree/maintenance/modernize">GitHub</a>
+    </div>
+  </header>
+  <main id="main" class="wrap docs">
+    <h1>Set up Obelisk</h1>
+    <p class="intro">Start on a software panel, then use the same browser remote with a physical LED installation.</p>
+    <div class="docs-layout">
+      <nav class="docs-nav" aria-label="On this page">
+        <a href="#simulator">Local simulator</a>
+        <a href="#hardware">Raspberry Pi setup</a>
+        <a href="#controls">Remote controls</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+      </nav>
+      <div class="docs-content">
+        <section id="simulator">
+          <h2>Run the local simulator</h2>
+          <p>You need Git, Node.js 24.22.3 or later in the 24.x series or Node.js 26.x, and npm 11.</p>
+          <div class="snippet" data-snippet><pre><code>git clone --branch maintenance/modernize --single-branch https://github.com/sachasayan/obelisk.git
+cd obelisk
+npm ci --ignore-scripts
+npm run simulate</code></pre></div>
+          <p>Open <code>http://127.0.0.1:3001/display</code>. Switch between <strong>2D panel</strong> and <strong>3D installation</strong> and pick a mode from the docked remote.</p>
+          <h3>Try a different layout</h3>
+          <p>The format is <code>COLSxROWS:CHAINxPARALLEL</code>. This example starts with a blank 32 × 32 pixel panel made of four 16 × 16 tiles.</p>
+          <div class="snippet" data-snippet><pre><code>OBELISK_SIM_LAYOUT=16x16:2x2 OBELISK_START_MODE=off npm run simulate</code></pre></div>
+        </section>
+        <section id="hardware">
+          <h2>Run on a Raspberry Pi</h2>
+          <p>Use a Raspberry Pi running 64-bit Raspberry Pi OS, compatible RGB matrix panels, a GPIO adapter, the right ribbon and power cables, and a power supply sized for your panels. Follow the <a href="https://github.com/hzeller/rpi-rgb-led-matrix">upstream driver’s wiring and mapping instructions</a> for your specific hardware.</p>
+          <p>Clone Obelisk using the commands above. On the Pi, install the supported Node.js and npm versions, <code>build-essential</code>, and <code>python3</code>. Then install dependencies and build the native driver from the checkout.</p>
+          <div class="snippet" data-snippet><pre><code>npm ci --ignore-scripts
+npm rebuild rpi-led-matrix</code></pre></div>
+          <p>In <code>packages/obelisk-server/config.ts</code>, set <code>initPanel: true</code>. Match rows, columns, tile counts, scan options, mapping, and brightness to your installation before starting the app.</p>
+          <div class="snippet" data-snippet><pre><code>npm run clientbuild
+npm run obelisk</code></pre></div>
+          <p>The local remote defaults to <code>http://127.0.0.1:3001/</code>. To use a phone, start with <code>HOST=0.0.0.0 npm run obelisk</code> and open the Pi’s local IP address on port 3001. The remote is unauthenticated, so keep it on a trusted network.</p>
+        </section>
+        <section id="controls">
+          <h2>Use the remote</h2>
+          <ul>
+            <li><strong>Visuals</strong> opens Clock, Billboard, Pulse, Space, Sunlight, and Test. Only the active mode runs.</li>
+            <li><strong>Munchman</strong> opens a four-way pad. Hold an arm to repeat it, or drag between arms without lifting your finger. The center is neutral. Arrow keys and WASD also steer.</li>
+            <li><strong>Pong</strong> opens a vertical drag surface for a paddle. Lightcycles plays an automatic round.</li>
+            <li><strong>Turn display off</strong> stops the mode and blanks the panel. Set <code>OBELISK_START_MODE=off</code> to start blank.</li>
+          </ul>
+        </section>
+        <section id="troubleshooting">
+          <h2>Troubleshooting</h2>
+          <ul>
+            <li><strong>Port already in use.</strong> Use <code>PORT=3002 npm run simulate</code>, then open <code>http://127.0.0.1:3002/display</code>.</li>
+            <li><strong>3D unavailable.</strong> Enable WebGL in your browser or use the 2D view. Both receive the same live pixel frame.</li>
+            <li><strong>Phone cannot connect.</strong> Check it is on the same trusted network, the server is listening on a LAN interface, and you used the Pi’s local address and port.</li>
+            <li><strong>Panel shows the wrong pattern.</strong> Start with Test and verify dimensions, scan options, chain order, and brightness against your panel model.</li>
+          </ul>
+          <p>See the <a href="https://github.com/sachasayan/obelisk/tree/maintenance/modernize">repository README and source</a> for configuration and development details.</p>
+        </section>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer"><div class="wrap footer-inner"><a href="/">Obelisk home</a><a href="https://github.com/sachasayan/obelisk/tree/maintenance/modernize">View on GitHub</a></div></footer>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0c0e">
+  <title>Obelisk — An open-source LED wall you can play</title>
+  <meta name="description" content="Build an interactive LED wall with Obelisk. Run clocks, visual effects, and games on a Raspberry Pi, or try the live 2D and 3D simulator without hardware.">
+  <link rel="canonical" href="https://obelisk-sachasayan.netlify.app/">
+  <link rel="icon" type="image/svg+xml" href="/assets/keystone-mark.svg">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Obelisk">
+  <meta property="og:title" content="Obelisk — An open-source LED wall you can play">
+  <meta property="og:description" content="Visuals and games for a Raspberry Pi LED wall. Build the installation or try the simulator first.">
+  <meta property="og:url" content="https://obelisk-sachasayan.netlify.app/">
+  <meta property="og:image" content="https://obelisk-sachasayan.netlify.app/assets/social.jpg">
+  <meta property="og:image:alt" content="Obelisk's amber LED clock on an oak wall in the 3D simulator">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/site.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/" aria-label="Obelisk home">
+        <img src="/assets/keystone-mark.svg" alt="" width="16" height="27">
+        <img src="/assets/keystone-wordmark.svg" alt="Obelisk" width="92" height="21">
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="#experience">Explore</a>
+        <a href="#setup">Set up</a>
+        <a href="/docs/">Docs</a>
+      </nav>
+      <a class="button button-small button-outline" href="https://github.com/sachasayan/obelisk/tree/maintenance/modernize">GitHub</a>
+    </div>
+  </header>
+  <main id="main">
+    <section class="wrap hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">Open source · Raspberry Pi</p>
+        <h1 id="hero-title">An LED wall<br>you can <em>play.</em></h1>
+        <p class="lede">Obelisk turns modular RGB panels into a display for clocks, visual effects, and games. Pick a mode or steer a game from your phone.</p>
+        <div class="actions">
+          <a class="button button-primary" href="/docs/#simulator">Run the simulator</a>
+          <a class="button button-outline" href="https://github.com/sachasayan/obelisk/tree/maintenance/modernize">View on GitHub</a>
+        </div>
+      </div>
+      <figure class="hero-preview" data-gallery aria-label="Obelisk product views">
+        <div class="hero-window">
+          <img data-view="room" src="/assets/room.webp" alt="The live amber LED clock on an oak wall above a couch, lit by lamps and recessed ceiling lights in Obelisk’s 3D simulator" width="1280" height="746" fetchpriority="high">
+          <img data-view="pixels" src="/assets/pixels.webp" alt="The software LED panel in 2D beside the Obelisk mode selector" width="1280" height="766" decoding="async" loading="lazy" hidden>
+        </div>
+        <figcaption>
+          <span data-caption="room">Live 3D simulator</span>
+          <span data-caption="pixels" hidden>Live 2D simulator with docked remote</span>
+          <div class="view-toggle" data-gallery-controls role="group" aria-label="Simulator view" hidden>
+            <button type="button" data-select-view="room" aria-pressed="true">3D room</button>
+            <button type="button" data-select-view="pixels" aria-pressed="false">2D pixels</button>
+          </div>
+        </figcaption>
+      </figure>
+    </section>
+
+    <section id="experience" class="section feature-section" aria-labelledby="experience-title">
+      <div class="wrap">
+        <header class="section-head">
+          <h2 id="experience-title">Visuals and games, one remote.</h2>
+          <p>Leave a clock or a quiet starfield on the wall. Switch to a game when you want to play.</p>
+        </header>
+        <div class="mode-layout">
+          <article class="mode-story">
+            <h3>Visuals</h3>
+            <p>Clock, transit arrivals, Pulse, Space, Sunlight, and a calibration pattern. Only the selected mode runs.</p>
+            <div class="mode-art" aria-label="Artwork from the remote">
+              <figure><img src="/assets/poster-clock.webp" width="512" height="342" alt="" loading="lazy"><figcaption>Clock</figcaption></figure>
+              <figure><img src="/assets/poster-space.webp" width="512" height="342" alt="" loading="lazy"><figcaption>Space</figcaption></figure>
+            </div>
+          </article>
+          <article class="mode-story">
+            <h3>Games</h3>
+            <p>Drag the Munchman D-pad, move a paddle in Pong, or watch an autoplay round of Lightcycles.</p>
+            <div class="mode-art" aria-label="Artwork from the remote">
+              <figure><img src="/assets/poster-munchman.webp" width="512" height="342" alt="" loading="lazy"><figcaption>Munchman</figcaption></figure>
+              <figure><img src="/assets/poster-pong.webp" width="512" height="342" alt="" loading="lazy"><figcaption>Pong</figcaption></figure>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section control-story" aria-labelledby="remote-title">
+      <div class="phone-frame">
+        <img src="/assets/remote.webp" width="390" height="474" alt="The Munchman remote on a phone-size screen, showing a continuous four-way D-pad and Home control" loading="lazy" decoding="async">
+      </div>
+      <div class="control-copy">
+        <h2 id="remote-title">Your phone is the controller.</h2>
+        <p>Open Obelisk in a browser on the same trusted network as the installation. Select a mode, play with touch controls, or turn the display off from the remote.</p>
+        <ul class="feature-list">
+          <li>Hold and slide across the Munchman D-pad to change direction.</li>
+          <li>Use arrow keys or WASD when you’re at a keyboard.</li>
+          <li>Keep the same remote beside the 2D or 3D simulator.</li>
+        </ul>
+        <a class="text-link" href="/docs/#controls">Using the remote</a>
+      </div>
+    </section>
+
+    <section id="setup" class="section setup-section" aria-labelledby="setup-title">
+      <div class="wrap">
+        <header class="section-head">
+          <h2 id="setup-title">Try it first. Build it when you’re ready.</h2>
+          <p>Obelisk runs the same modes on a software panel and on the Raspberry Pi installation.</p>
+        </header>
+        <div class="setup-grid">
+          <article class="setup-card">
+            <h3>Run without hardware</h3>
+            <p>Start a local simulator. Choose the pixel grid or orbit the installation in 3D. You can change the tile count, size, and arrangement.</p>
+            <pre><code>npm ci --ignore-scripts
+npm run simulate</code></pre>
+            <a class="button button-primary" href="/docs/#simulator">Simulator guide</a>
+          </article>
+          <article class="setup-card">
+            <h3>Build the LED installation</h3>
+            <p>Connect compatible RGB matrix panels to a Raspberry Pi through a GPIO adapter. Configure the panel dimensions, mapping, and brightness for your layout.</p>
+            <a class="button button-outline" href="/docs/#hardware">Raspberry Pi guide</a>
+            <p class="setup-note">Requires compatible panels, data cables, and a panel-rated power supply.</p>
+          </article>
+        </div>
+        <figure class="hardware-photo">
+          <img src="/assets/prototype.webp" width="1280" height="812" alt="The original working Obelisk LED strip prototype wall-mounted with its controller and cabling visible" loading="lazy" decoding="async">
+          <figcaption>The original Obelisk hardware prototype running Space</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="wrap section faq" aria-labelledby="faq-title">
+      <header class="section-head"><h2 id="faq-title">Questions</h2></header>
+      <details>
+        <summary>Do I need LED panels to try it?</summary>
+        <p>No. The simulator runs the modes locally and shows the output as individual pixels or as a mounted 3D installation.</p>
+      </details>
+      <details>
+        <summary>Can I use a different shape or number of panels?</summary>
+        <p>Yes. Set the tile geometry and the horizontal and vertical tile counts. The simulator is a way to check how modes fit before you wire the physical setup.</p>
+      </details>
+      <details>
+        <summary>Does this website control my display?</summary>
+        <p>The remote is served by your own Obelisk instance. Use that instance’s address on your local network to control the panel.</p>
+      </details>
+      <details>
+        <summary>Can I write my own mode?</summary>
+        <p>Yes. Obelisk is MIT-licensed. The built-in modes share a panel drawing interface and are a starting point for your own visuals or games. <a href="https://github.com/sachasayan/obelisk/tree/maintenance/modernize/packages/obelisk-server/modes">Browse the mode source</a>.</p>
+      </details>
+    </section>
+
+    <section class="section final-action" aria-labelledby="build-title">
+      <div class="wrap">
+        <h2 id="build-title">Run Obelisk on your machine.</h2>
+        <div class="actions">
+          <a class="button button-primary" href="/docs/#simulator">Get started</a>
+          <a class="button button-outline" href="https://github.com/sachasayan/obelisk/tree/maintenance/modernize">View on GitHub</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <a class="brand" href="/" aria-label="Obelisk home">
+        <img src="/assets/keystone-mark.svg" alt="" width="12" height="20">
+        <img src="/assets/keystone-wordmark.svg" alt="Obelisk" width="72" height="16">
+      </a>
+      <p>Built on <a href="https://github.com/hzeller/rpi-rgb-led-matrix">rpi-rgb-led-matrix</a> and <a href="https://github.com/alexeden/rpi-led-matrix">rpi-led-matrix</a>.</p>
+      <a href="/docs/">Documentation</a>
+    </div>
+  </footer>
+</body>
+</html>

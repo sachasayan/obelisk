@@ -45,3 +45,7 @@ Image 1 is the existing oak ALBEDO material and defines the exact grain coordina
 
 Use case: photorealistic-natural. Square photo-real production albedo texture for large warm gray polished concrete interior floor, beige-gray limestone aggregate in satin sealed concrete, refined but imperfections visible as fine subtle flecks in a restrained warm gray palette. Empty material swatch, ortho straight down, texture only as a continuous surface. Fine scale, uniform soft neutral light, no visible directional lighting, no glare, no perspective or faces. No large contrast, no object, no planks, no bevel or discrete stones, no tile seams, approximate seamless edges, no lettering.
 
+
+### Upholstery
+
+Generate one square photoreal PBR albedo scan for the upholstery of a modern low-profile lounge couch in a dark media room. Fine tactile heathered charcoal with a muted olive/espresso tint, elegant dense wool-linen cross weave, tiny warm and cool flecks, medium charcoal neutral value so it can be darkened in the renderer. Square full-bleed orthographic textile material sample with approximately seamless edges; weave at realistic small scale. Planar sample no fabric folds, seams, pillows, holes, furniture silhouette, emboss, cast shadow, bright reflections, text, or directional lighting. Even neutral diffuse light; capture subtle credible fibers.

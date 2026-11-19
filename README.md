@@ -1,5 +1,7 @@
 # **|||** Obelisk
 
+[Project website and installation guide](https://obelisk-sachasayan.netlify.app/)
+
 ![](img/obelisk.jpg)
 
 ## What is Obelisk? 
@@ -83,13 +85,13 @@ npm run simulate
 ```
 
 Open <http://127.0.0.1:3001/display> for the live panel and choose **2D panel**
-or **3D installation**. The 3D view mounts the live tiles on a lit oak wall.
+or **3D installation**. The 3D view mounts the live tiles in an oak and charcoal room.
 Use **Visuals** or **Games** in the docked remote to switch modes, or choose
 **Turn display off** to stop the current mode. Drag the divider to resize the remote on a wider screen.
 Use **Remote** to collapse or reopen the dock. The dock loads the same remote served at `/` and occupies a
 player slot. The 2D view can show the individual pixel grid. In 3D, drag to orbit, scroll or pinch to zoom,
 and use **Front view** to see the panel head-on. Select **Munchman** in the
-remote to open its directional pad. Use the pad, arrow keys, or WASD. The keyboard
+remote to open its directional pad. Hold or slide across its arms to steer, or use the arrow keys or WASD. The keyboard
 also works with focus on the simulator preview. The first input takes over from
 demo movement. WASD also works in the server terminal when it is interactive.
 

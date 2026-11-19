@@ -1,13 +1,31 @@
 import {
-  ACESFilmicToneMapping, BoxGeometry, DataTexture, Group,
-  Mesh, MeshStandardMaterial, PCFShadowMap, PerspectiveCamera, PlaneGeometry, RGBAFormat,
-  Scene, ShaderMaterial, Vector2, WebGLRenderer,
+  ACESFilmicToneMapping, BoxGeometry, DataTexture, FogExp2, Group, Mesh, MeshStandardMaterial,
+  PCFShadowMap, PerspectiveCamera, PlaneGeometry, RGBAFormat, Scene, ShaderMaterial, SRGBColorSpace,
+  Vector2, WebGLRenderer,
 } from 'three';
+import type { WebGLRenderTarget } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import type { PanelGeometry } from '../../../../shared/panel';
 import { writeRgba } from './frame';
 import type { DisplayFrame } from './frame';
-import { createPanelRoom } from './panel-room';
+import { createPanelRoom, hazeLayer } from './panel-room';
+
+class RoomOcclusionPass extends GTAOPass {
+  override render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, dt: number, maskActive: boolean) {
+    const visibleLayers = this.camera.layers.mask;
+    this.camera.layers.disable(hazeLayer);
+    try {
+      super.render(renderer, writeBuffer, readBuffer, dt, maskActive);
+    } finally {
+      this.camera.layers.mask = visibleLayers;
+    }
+  }
+}
 
 const lensVertex = `
   varying vec2 vUv;
@@ -31,16 +49,19 @@ const lensFragment = `
     float lens = 1.0 - smoothstep(0.21, 0.31, distanceFromCenter);
     float halo = 1.0 - smoothstep(0.18, 0.58, distanceFromCenter);
     float highlight = 1.0 - smoothstep(0.02, 0.16, length(fract(local) - vec2(0.43, 0.43)));
-    vec3 plastic = vec3(0.052, 0.052, 0.053);
-    vec3 bulb = vec3(0.095, 0.107, 0.116) + 0.04 * highlight;
+    vec3 plastic = vec3(0.006, 0.006, 0.007);
+    vec3 bulb = vec3(0.013, 0.015, 0.019) + 0.005 * highlight;
     vec3 color = mix(plastic, bulb, lens)
-      + pow(led, vec3(0.65)) * (lens * 0.93 + halo * 0.17);
+      + pow(led, vec3(0.68)) * (lens * 2.2 + halo * 0.19);
     gl_FragColor = vec4(color, 1.0);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
   }`;
 
 export function createPanelScene(container: HTMLElement, { width, height, tileWidth, tileHeight }: PanelGeometry) {
   const renderer = new WebGLRenderer({ antialias: true, alpha: false });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.65);
+  renderer.setPixelRatio(pixelRatio);
   renderer.toneMapping = ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.03;
   renderer.shadowMap.enabled = true;
@@ -52,21 +73,39 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
   container.append(renderer.domElement);
 
   const scene = new Scene();
-  const camera = new PerspectiveCamera(34, 1, 0.1, Math.max(2500, Math.max(width, height) * 16));
-  const room = createPanelRoom({ width, height, tileWidth, tileHeight }, Math.min(8, renderer.capabilities.getMaxAnisotropy()), render);
+  const camera = new PerspectiveCamera(47, 1, .35, Math.max(2000, Math.max(width, height) * 12));
+  camera.layers.enable(hazeLayer);
+  const room = createPanelRoom({ width, height, tileWidth, tileHeight }, Math.min(8, renderer.capabilities.getMaxAnisotropy()), requestRender);
   scene.background = room.background;
+  scene.fog = new FogExp2(room.background, .00135 / room.scale);
   scene.add(room.room);
+
+  const supportsHalfFloat = renderer.extensions.has('EXT_color_buffer_float') || renderer.extensions.has('EXT_color_buffer_half_float');
+  const composer = supportsHalfFloat ? new EffectComposer(renderer) : undefined;
+  const occlusion = composer && new RoomOcclusionPass(scene, camera);
+  const bloom = composer && new UnrealBloomPass(new Vector2(1, 1), .26, .57, 1.08);
+  const output = composer && new OutputPass();
+  if (composer && occlusion && bloom && output) {
+    occlusion.blendIntensity = .57;
+    occlusion.updateGtaoMaterial({ radius: 8 * room.scale, thickness: 2.6 * room.scale, samples: 8, distanceFallOff: .65 });
+    occlusion.updatePdMaterial({ radius: 3, samples: 8 });
+    composer.addPass(new RenderPass(scene, camera));
+    composer.addPass(occlusion);
+    composer.addPass(bloom);
+    composer.addPass(output);
+  }
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enablePan = false;
   controls.minDistance = Math.max(height * 1.6, width * 0.24);
   controls.maxDistance = Math.max(width, height) * 12;
   controls.minAzimuthAngle = -Math.PI / 2.5;
   controls.maxAzimuthAngle = Math.PI / 2.5;
-  controls.minPolarAngle = Math.PI / 5;
-  controls.maxPolarAngle = Math.PI * 0.77;
+  controls.minPolarAngle = Math.PI * .29;
+  controls.maxPolarAngle = Math.PI * .6;
 
   const image = new Uint8Array(width * height * 4);
   const texture = new DataTexture(image, width, height, RGBAFormat);
+  texture.colorSpace = SRGBColorSpace;
   const lenses = new PlaneGeometry(tileWidth - 0.2, tileHeight - 0.2);
   const body = new BoxGeometry(tileWidth - 0.26, tileHeight - 0.26, 1.75);
   const casing = new MeshStandardMaterial({ color: 0x161c20, roughness: 0.61, metalness: 0.22 });
@@ -87,6 +126,7 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
       const tile = new Mesh(body, casing);
       tile.position.set(x, y, -0.9);
       tile.castShadow = true;
+      tile.receiveShadow = true;
       mounting.add(tile);
 
       const material = new ShaderMaterial({
@@ -106,25 +146,35 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
     }
   }
 
-  function render() {
-    renderer.render(scene, camera);
+  let requestedFrame = 0;
+  function requestRender() {
+    if (requestedFrame) return;
+    requestedFrame = window.requestAnimationFrame(() => {
+      requestedFrame = 0;
+      if (composer) composer.render();
+      else renderer.render(scene, camera);
+    });
   }
 
   function fitDistance(aspect: number) {
     const fov = camera.fov * Math.PI / 180;
     return Math.max(
-      width / (1.6 * Math.tan(fov / 2) * aspect),
-      (height + room.scale * 26) / (1.15 * Math.tan(fov / 2)),
+      width / (1.36 * Math.tan(fov / 2) * aspect),
+      (height + room.scale * 117) / (1.47 * Math.tan(fov / 2)),
     );
   }
 
   function setView(front: boolean) {
     const distance = fitDistance(camera.aspect);
-    const y = front ? 0 : -room.scale * 4;
+    const y = front ? 0 : -room.scale * 3;
     controls.target.set(0, y, 0);
-    camera.position.set(front ? 0 : -distance * .24, front ? y : y + distance * .155, distance);
+    camera.position.set(
+      front ? 0 : -Math.min(distance * .22, room.scale * 73),
+      front ? y : y + Math.min(distance * .10, room.scale * 26),
+      distance,
+    );
     controls.update();
-    render();
+    requestRender();
   }
 
   function resize() {
@@ -139,15 +189,17 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
       controls.update();
     }
     renderer.setSize(w, h, false);
+    composer?.setSize(w, h);
+    occlusion?.setSize(Math.max(1, Math.round(w * pixelRatio * .57)), Math.max(1, Math.round(h * pixelRatio * .57)));
   }
 
   resize();
   const observer = new ResizeObserver(() => {
     resize();
-    render();
+    requestRender();
   });
   observer.observe(container);
-  controls.addEventListener('change', render);
+  controls.addEventListener('change', requestRender);
   setView(false);
 
   return {
@@ -156,16 +208,21 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
     paint(frame: DisplayFrame) {
       writeRgba(frame, image);
       texture.needsUpdate = true;
-      render();
+      requestRender();
     },
     dispose() {
       observer.disconnect();
+      window.cancelAnimationFrame(requestedFrame);
       controls.dispose();
       texture.dispose();
       lenses.dispose();
       body.dispose();
       railGeometry.dispose();
       room.dispose();
+      output?.dispose();
+      bloom?.dispose();
+      occlusion?.dispose();
+      composer?.dispose();
       tileMaterials.forEach((material) => material.dispose());
       casing.dispose();
       renderer.dispose();
