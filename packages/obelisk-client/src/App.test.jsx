@@ -25,7 +25,8 @@ test('selects Pong after assignment and keeps the connection when navigating hom
   const visuals = screen.getByRole('region', { name: 'Visuals' });
   const games = screen.getByRole('region', { name: 'Games' });
   expect(within(visuals).getAllByRole('button')).toHaveLength(5);
-  expect(within(games).getAllByRole('button')).toHaveLength(3);
+  expect(within(games).getAllByRole('button')).toHaveLength(6);
+  expect(within(games).queryByRole('button', { name: 'Munchman' })).not.toBeInTheDocument();
   const pong = within(games).getByRole('button', { name: 'Pong' });
   expect(pong).toBeDisabled();
   act(() => socket.emit('obeliskAssignUser', 0));
@@ -78,32 +79,31 @@ test('Pulse and Clock open dedicated controls from the mode catalog', () => {
   fireEvent.click(screen.getByRole('link', { name: 'Home' }));
 });
 
-test('Munchman opens its browser controls and sends keyboard and directional input', () => {
+test('Stack Duel joins its game and sends keyboard and pad input', () => {
   const canvas = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
-  const socket = Object.assign(new EventEmitter(), {
-    connected: true,
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-  });
+  const socket = Object.assign(new EventEmitter(), { connected: true, connect: vi.fn(), disconnect: vi.fn() });
   vi.mocked(io).mockReturnValue(socket);
   const send = vi.spyOn(socket, 'emit');
   render(<App />);
 
   act(() => socket.emit('obeliskAssignUser', 0));
-  fireEvent.click(screen.getByRole('button', { name: 'Munchman' }));
-  expect(send).toHaveBeenCalledWith('changeMode', 'munchman');
-  act(() => socket.emit('obeliskInitController', 'munchman'));
+  fireEvent.click(screen.getByRole('button', { name: 'Stack Duel' }));
+  expect(send).toHaveBeenCalledWith('changeMode', 'stack-duel');
+  act(() => socket.emit('obeliskInitController', 'stack-duel'));
+  expect(send).toHaveBeenCalledWith('game:join', 'stack-duel');
+  act(() => socket.emit('game:status', { mode: 'stack-duel', seat: 0, players: 1, message: 'Solo', scores: [0, 0] }));
 
-  expect(window.location.pathname).toBe('/controller/munchman');
+  expect(window.location.pathname).toBe('/controller/stack-duel');
   fireEvent.keyDown(window, { key: 'ArrowRight' });
-  expect(send).toHaveBeenCalledWith('munchman:move', 'right');
-  fireEvent.keyDown(window, { key: 'w' });
-  expect(send).toHaveBeenCalledWith('munchman:move', 'up');
+  expect(send).toHaveBeenCalledWith('game:input', { mode: 'stack-duel', action: 'right' });
   fireEvent.click(screen.getByRole('button', { name: 'Move down' }));
-  expect(send).toHaveBeenCalledWith('munchman:move', 'down');
+  expect(send).toHaveBeenCalledWith('game:input', { mode: 'stack-duel', action: 'down' });
+  fireEvent.click(screen.getByRole('button', { name: 'Drop' }));
+  expect(send).toHaveBeenCalledWith('game:input', { mode: 'stack-duel', action: 'action' });
 
   fireEvent.click(screen.getByRole('link', { name: 'Home' }));
-  expect(screen.getByRole('button', { name: 'Munchman' })).toBeEnabled();
+  expect(send).toHaveBeenCalledWith('game:leave');
+  expect(screen.getByRole('button', { name: 'Stack Duel' })).toBeEnabled();
   expect(socket.connect).toHaveBeenCalledTimes(1);
   canvas.mockRestore();
 });
@@ -118,8 +118,13 @@ test('the dock embeds the standard remote and keeps it mounted when collapsed', 
     render(<App />);
 
     const remote = screen.getByTitle('Obelisk remote');
-    const toggle = screen.getByRole('button', { name: 'Remote' });
+    const toggle = screen.getByRole('button', { name: 'Sidebar' });
     expect(remote).toHaveAttribute('src', '/');
+    fireEvent.click(screen.getByRole('tab', { name: 'Device Settings' }));
+    expect(screen.getByRole('tabpanel', { name: 'Device Settings' })).toBeVisible();
+    expect(remote.closest('[role=tabpanel]')).toHaveAttribute('hidden');
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Device Settings' }), { key: 'ArrowLeft' });
+    expect(remote.closest('[role=tabpanel]')).not.toHaveAttribute('hidden');
     expect(toggle).toHaveAttribute('aria-pressed', 'true');
 
     fireEvent.click(toggle);

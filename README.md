@@ -89,19 +89,27 @@ or **3D installation**. The 3D view mounts the live tiles in an oak and charcoal
 with carpet, a furnished seating area, and studio lighting. See the
 [3D room asset credits](packages/obelisk-client/public/room/credits.html) for model and material sources.
 Use **Visuals** or **Games** in the docked remote to switch modes, or choose
-**Turn display off** to stop the current mode. Drag the divider to resize the remote on a wider screen.
-Use **Remote** to collapse or reopen the dock. The dock loads the same remote served at `/` and occupies a
-player slot. The 2D view can show the individual pixel grid. In 3D, drag to orbit or zoom inside the
-20 × 16 ft room. Use **Front view** to see the panel head-on. Select **Munchman** in the
-remote to open its directional pad. Hold or slide across its arms to steer, or use the arrow keys or WASD. The keyboard
-also works with focus on the simulator preview. The first input takes over from
-demo movement. WASD also works in the server terminal when it is interactive.
+**Turn display off** to stop the current mode. Drag the divider to resize the sidebar.
+The **Remote** tab embeds the same remote served at `/` and occupies a player slot.
+The 2D view can show the pixel grid. In 3D, drag to orbit or zoom inside the 20 × 16 ft room
+and use **Front view** to see the panel head-on.
+
+Under **Device Settings**, drag the time slider or select **Sunset**, **Late night**, or **Midnight**
+to open a Sunlight preview. **Return to live time** restores the ordinary schedule.
+You can also change virtual brightness and apply custom tile geometry or a preset.
+Applying geometry restarts the current mode. Settings are shared by simulator viewers for the current server run.
 
 **Pulse** has its own color and intensity controls, and **Clock** offers three bitmap font families and
 a color picker. Their settings are shared across connected remotes for the current server run.
 **Sunlight** stays dark by day, animates from sunset colors into midnight blue, then turns off at midnight.
 It uses Toronto by default. Set `OBELISK_SUNLIGHT_LATITUDE`, `OBELISK_SUNLIGHT_LONGITUDE`, and
 `OBELISK_SUNLIGHT_TIME_ZONE` (an IANA time zone such as `America/Vancouver`) to match your installation.
+
+**Stack Duel** is a solo or two-player falling-block game with pressure rows on multi-line clears.
+**Deep Scan** is a hidden-beacon game against a computer or another player.
+**Signal Run** is a solo gate runner, and **Echo Keys** is a solo directional memory game.
+The four games support a draggable D-pad, arrow keys, and WASD. Space or Enter uses the action button.
+To duel, both players choose the same game from separate remotes connected to the same Obelisk.
 
 If another server is using the default port, run
 `PORT=3002 npm run simulate` and open <http://127.0.0.1:3002/display>.

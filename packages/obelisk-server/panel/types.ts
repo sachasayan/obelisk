@@ -28,4 +28,5 @@ export interface ModeState {
   playerData: (PlayerData | undefined)[];
   loadFont(name: string): FontInstance;
   visualSettings(): VisualSettings;
+  simulatedMinute?(): number | null;
 }

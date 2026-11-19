@@ -14,7 +14,7 @@
 
 .panel-app *, .panel-app *::before, .panel-app *::after { box-sizing: border-box; }
 
-.panel-header, .panel-toolbar, .panel-remote-title, .panel-status {
+.panel-header, .panel-toolbar, .panel-status {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -30,7 +30,7 @@
   background: #1a242c;
 }
 
-.panel-identity, .panel-switch, .panel-actions, .panel-remote-title, .panel-status-line, .panel-metadata, .panel-camera-buttons {
+.panel-identity, .panel-switch, .panel-actions, .panel-status-line, .panel-metadata, .panel-camera-buttons {
   display: flex;
   align-items: center;
   gap: .45rem;
@@ -44,17 +44,11 @@
   height: 1.125rem;
 }
 
-.panel-header h1, .panel-remote-title h2 {
+.panel-header h1 {
   margin: 0;
   font-size: .82rem;
   line-height: 1.25;
   font-weight: 650;
-}
-
-.panel-remote-title h2 {
-  color: var(--panel-muted);
-  font-size: .75rem;
-  letter-spacing: .035em;
 }
 
 .panel-app svg { flex: none; font-size: 1rem; }
@@ -80,7 +74,7 @@
   background: var(--panel-page);
 }
 
-.panel-toolbar, .panel-remote-title {
+.panel-toolbar {
   min-height: 2.45rem;
   border-bottom: 1px solid var(--panel-line);
 }
@@ -115,14 +109,14 @@
   background: transparent;
 }
 
-.panel-switch button[aria-pressed="true"] {
+.panel-switch button:is([aria-pressed="true"], [aria-selected="true"]) {
   border-inline-color: #2b353d;
   border-top-color: var(--panel-accent);
   color: var(--panel-text);
   background: var(--panel-page);
 }
 
-.panel-switch button[aria-pressed="true"] svg { color: var(--panel-accent); }
+.panel-switch button:is([aria-pressed="true"], [aria-selected="true"]) svg { color: var(--panel-accent); }
 
 .panel-app .panel-tool {
   min-height: 1.65rem;
@@ -160,9 +154,10 @@
   background: #161d23;
 }
 
-.panel-remote[hidden] { display: none; }
-.panel-remote-title { justify-content: start; gap: .45rem; }
-.panel-remote-title svg { color: var(--panel-muted); }
+.panel-remote[hidden], .panel-dock-content[hidden] { display: none; }
+.panel-dock-tabs { min-height: 2.45rem; border-bottom: 1px solid var(--panel-line); }
+.panel-dock-tabs button { gap: .33rem; }
+.panel-dock-content { min-height: 0; overflow: auto; }
 
 .panel-remote iframe {
   display: block;
@@ -184,7 +179,8 @@
 
 .panel-flat-stage {
   display: grid;
-  align-content: center;
+  place-items: center;
+  container-type: size;
   width: 100%;
   min-width: 0;
   padding: clamp(.9rem, 2.75vw, 2.5rem);
@@ -194,7 +190,7 @@
 }
 
 .panel-flat {
-  width: 100%;
+  width: min(100cqw, calc(100cqh * var(--panel-ratio)));
   position: relative;
   background: #000;
   box-shadow: 0 0 0 .2rem #0c1114, 0 .6rem 2.8rem #0009;
@@ -310,3 +306,22 @@
   .panel-switch button { padding-inline: .4rem; }
   .panel-status { justify-content: start; }
 }
+
+.device-settings { display: grid; gap: .75rem; padding: .75rem; font-size: .8rem; }
+.device-card { display: grid; gap: .65rem; min-width: 0; padding: .8rem; background: #1c252c; border: 1px solid #364149; border-radius: .5rem; }
+.device-card-title, .device-time, .device-time-labels { display: flex; align-items: center; justify-content: space-between; gap: .25rem; }
+.device-card h2 { margin: 0; font-size: .85rem; font-weight: 650; }
+.device-card p { margin: 0; color: var(--panel-muted); font-size: .74rem; line-height: 1.35; }
+.device-pill { padding: .24rem .4rem; border-radius: .2rem; background: #28413a; color: var(--panel-accent); font-size: .68rem; }
+.device-time { align-items: baseline; flex-wrap: wrap; }
+.device-time output { font-size: 1.65rem; font-weight: 640; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+.device-time span, .device-time-labels { color: var(--panel-muted); font-size: .68rem; }
+.device-time-labels { margin-top: -.5rem; }
+.device-card input[type='range'] { width: 100%; margin: 0; accent-color: var(--panel-accent); }
+.device-presets { display: flex; flex-wrap: wrap; gap: .3rem; }
+.device-card .panel-tool { justify-self: start; min-height: 1.95rem; }
+.device-card .panel-tool:disabled { opacity: .46; cursor: default; }
+.device-layout-fields { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.device-field { display: grid; gap: .28rem; min-width: 0; color: var(--panel-muted); font-size: .73rem; }
+.device-field input, .device-field select { width: 100%; padding: .4rem .45rem; border: 1px solid #43515a; border-radius: .3rem; color: var(--panel-text); background: #151d23; font: inherit; }
+.device-card .device-apply:not(:disabled) { color: var(--panel-accent); }

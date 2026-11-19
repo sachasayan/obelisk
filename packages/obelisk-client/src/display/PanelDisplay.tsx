@@ -4,12 +4,18 @@ import { useSearchParams } from 'react-router-dom';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import GridOnOutlinedIcon from '@mui/icons-material/GridOnOutlined';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import SettingsRemoteOutlinedIcon from '@mui/icons-material/SettingsRemoteOutlined';
 import ViewInArOutlinedIcon from '@mui/icons-material/ViewInArOutlined';
 import ViewSidebarOutlinedIcon from '@mui/icons-material/ViewSidebarOutlined';
 import { io } from 'socket.io-client';
-import { MUNCHMAN_CONTROLLER_PATH, MUNCHMAN_MOVE } from '../../../../shared/munchman';
-import { munchmanDirectionForKey } from '../components/munchman-input';
+import type { Socket } from 'socket.io-client';
+import { GAME_INPUT, games, isGameMode } from '../../../../shared/games';
+import { controllerPaths } from '../../../../shared/modes';
+import { SIMULATOR_SETTINGS, UPDATE_SIMULATOR_SETTINGS } from '../../../../shared/simulator';
+import type { SimulatorSettings, SimulatorUpdate } from '../../../../shared/simulator';
+import { gameActionForKey } from '../components/game-input';
+import DeviceSettings from './DeviceSettings';
 import { DISPLAY_FRAME, DISPLAY_NAMESPACE } from '../../../../shared/panel';
 import PanelCanvas from './PanelCanvas';
 import type { DisplayFrame } from './frame';
@@ -32,6 +38,9 @@ export default function PanelDisplay() {
   const [params, setParams] = useSearchParams();
   const view = params.get('view') === '3d' ? '3d' : '2d';
   const [frame, setFrame] = useState<DisplayFrame>();
+  const [device, setDevice] = useState<SimulatorSettings>();
+  const dockTab = params.get('tab') === 'device' ? 'device' : 'remote';
+  const displaySocket = useRef<Socket | null>(null);
   const [status, setStatus] = useState<Status>('connecting');
   const [grid, setGrid] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -45,6 +54,8 @@ export default function PanelDisplay() {
 
   useEffect(() => {
     const socket = io(DISPLAY_NAMESPACE, { autoConnect: false });
+    displaySocket.current = socket;
+    socket.on(SIMULATOR_SETTINGS, setDevice);
     socket.on(DISPLAY_FRAME, (next: DisplayFrame) => {
       if (!(next.rgb instanceof ArrayBuffer) || next.rgb.byteLength !== next.width * next.height * 3) return;
 
@@ -58,6 +69,7 @@ export default function PanelDisplay() {
     socket.connect();
 
     return () => {
+      displaySocket.current = null;
       socket.removeAllListeners();
       socket.disconnect();
     };
@@ -71,21 +83,38 @@ export default function PanelDisplay() {
     return () => document.removeEventListener('fullscreenchange', update);
   }, []);
 
-  useEffect(() => {
-    if (mode !== 'munchman' || status !== 'live') return;
+  function forwardGameKey(event: KeyboardEvent<HTMLDivElement>) {
+    if (!isGameMode(mode) || status !== 'live' || dockTab !== 'remote' || !remoteOpen ||
+        (mode === 'echo-keys' && event.repeat)) return;
+    const action = gameActionForKey(event.nativeEvent);
+    const remote = remoteFrame.current;
+    if (!action || remote?.contentDocument?.location.pathname !== controllerPaths[mode]) return;
+    event.preventDefault();
+    remote.contentWindow?.postMessage({ type: GAME_INPUT, mode, action }, window.location.origin);
+  }
 
-    function forwardMunchmanKey(event: globalThis.KeyboardEvent) {
-      const direction = munchmanDirectionForKey(event);
-      const remote = remoteFrame.current;
-      if (!direction || remote?.contentDocument?.location.pathname !== MUNCHMAN_CONTROLLER_PATH) return;
+  function updateDevice(update: SimulatorUpdate) {
+    if (!displaySocket.current?.connected) return;
+    setDevice((current) => current && { ...current, minute: update.minute === undefined ? current.minute : update.minute,
+      brightness: update.brightness ?? current.brightness });
+    displaySocket.current.emit(UPDATE_SIMULATOR_SETTINGS, update);
+  }
 
-      event.preventDefault();
-      remote.contentWindow?.postMessage({ type: MUNCHMAN_MOVE, direction }, window.location.origin);
-    }
+  function selectDockTab(tab: 'remote' | 'device') {
+    const nextParams = new URLSearchParams(params);
+    if (tab === 'device') nextParams.set('tab', 'device');
+    else nextParams.delete('tab');
+    setParams(nextParams, { replace: true });
+  }
 
-    window.addEventListener('keydown', forwardMunchmanKey);
-    return () => window.removeEventListener('keydown', forwardMunchmanKey);
-  }, [mode, status]);
+  function navigateDock(event: KeyboardEvent<HTMLDivElement>) {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === 'Home' ? 'remote' : event.key === 'End' ? 'device'
+      : dockTab === 'remote' ? 'device' : 'remote';
+    selectDockTab(next);
+    event.currentTarget.querySelector<HTMLButtonElement>(`#dock-tab-${next}`)?.focus();
+  }
 
   function selectView(next: '2d' | '3d') {
     const nextParams = new URLSearchParams(params);
@@ -154,7 +183,7 @@ export default function PanelDisplay() {
           aria-pressed={remoteOpen}
           onClick={() => setRemoteOpen(!remoteOpen)}
         >
-          <ViewSidebarOutlinedIcon aria-hidden="true" /> Remote
+          <ViewSidebarOutlinedIcon aria-hidden="true" /> Sidebar
         </button>
       </header>
 
@@ -187,7 +216,7 @@ export default function PanelDisplay() {
             </div>
           </div>
 
-          <div className="panel-viewport" tabIndex={mode === 'munchman' ? 0 : undefined}>
+          <div className="panel-viewport" tabIndex={isGameMode(mode) ? 0 : undefined} onKeyDown={forwardGameKey}>
             {!frame ? (
               <div className="panel-empty" role="status">
                 <strong>{statusText[status]}</strong>
@@ -206,7 +235,7 @@ export default function PanelDisplay() {
           <div
             className="panel-divider"
             role="separator"
-            aria-label="Resize remote"
+            aria-label="Resize sidebar"
             aria-controls="panel-remote"
             aria-orientation="vertical"
             aria-valuemin={minDockWidth}
@@ -221,12 +250,24 @@ export default function PanelDisplay() {
             onLostPointerCapture={stopResize}
           />
         )}
-        <aside className="panel-remote" id="panel-remote" aria-label="Remote dock" hidden={!remoteOpen}>
-          <header className="panel-remote-title">
-            <SettingsRemoteOutlinedIcon aria-hidden="true" />
-            <h2>Remote</h2>
-          </header>
-          <iframe ref={remoteFrame} src="/" title="Obelisk remote" />
+        <aside className="panel-remote" id="panel-remote" aria-label="Simulator sidebar" hidden={!remoteOpen}>
+          <div className="panel-switch panel-dock-tabs" role="tablist" aria-label="Simulator sidebar" onKeyDown={navigateDock}>
+            <button id="dock-tab-remote" type="button" role="tab" aria-selected={dockTab === 'remote'}
+              tabIndex={dockTab === 'remote' ? 0 : -1} aria-controls="dock-remote" onClick={() => selectDockTab('remote')}>
+              <SettingsRemoteOutlinedIcon aria-hidden="true" /> Remote
+            </button>
+            <button id="dock-tab-device" type="button" role="tab" aria-selected={dockTab === 'device'}
+              tabIndex={dockTab === 'device' ? 0 : -1} aria-controls="dock-device" onClick={() => selectDockTab('device')}>
+              <TuneOutlinedIcon aria-hidden="true" /> Device Settings
+            </button>
+          </div>
+          <div className="panel-dock-content" role="tabpanel" id="dock-remote" aria-labelledby="dock-tab-remote" hidden={dockTab !== 'remote'}>
+            <iframe ref={remoteFrame} src="/" title="Obelisk remote" />
+          </div>
+          <div className="panel-dock-content" role="tabpanel" id="dock-device" aria-labelledby="dock-tab-device" hidden={dockTab !== 'device'}>
+            {device && status === 'live' ? <DeviceSettings settings={device} update={updateDevice} /> :
+              <div className="panel-empty" role="status">{statusText[status]}</div>}
+          </div>
         </aside>
       </div>
 
@@ -237,7 +278,7 @@ export default function PanelDisplay() {
         </div>
         {frame && (
           <div className="panel-metadata">
-            <span className="panel-mode">{frame.mode === 'exit' ? 'Display off' : frame.mode}</span>
+            <span className="panel-mode">{frame.mode === 'exit' ? 'Display off' : isGameMode(frame.mode) ? games[frame.mode].title : frame.mode}</span>
             <span>{frame.width} × {frame.height} pixels</span>
             <span>{(frame.width / frame.tileWidth) * (frame.height / frame.tileHeight)} tiles</span>
             <span>{frame.brightness}% brightness</span>

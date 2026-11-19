@@ -1,7 +1,7 @@
+import { MINUTES_PER_DAY as minutesPerDay } from '../../../shared/simulator';
 import { mixColor, scaleColor } from '../panel/color';
 import type { ModeState } from '../panel/types';
 
-const minutesPerDay = 1440;
 const radians = Math.PI / 180;
 const defaultTimeZone = 'America/Toronto';
 
@@ -71,26 +71,34 @@ export function sunlightLook(minute: number, sunset: number) {
   };
 }
 
-let timer: NodeJS.Timeout;
+let lastDate: number | undefined;
+let sunset = minutesPerDay;
+const latitude = coordinate(process.env.OBELISK_SUNLIGHT_LATITUDE, 90, 43.6532);
+const longitude = coordinate(process.env.OBELISK_SUNLIGHT_LONGITUDE, 180, -79.3832);
+const localTime = createLocalTime(process.env.OBELISK_SUNLIGHT_TIME_ZONE ?? defaultTimeZone);
 
-function init({ matrix }: ModeState) {
-  const latitude = coordinate(process.env.OBELISK_SUNLIGHT_LATITUDE, 90, 43.6532);
-  const longitude = coordinate(process.env.OBELISK_SUNLIGHT_LONGITUDE, 180, -79.3832);
-  const timeZone = createLocalTime(process.env.OBELISK_SUNLIGHT_TIME_ZONE ?? defaultTimeZone);
+const timeZone = localTime.resolvedOptions().timeZone;
+
+export function readSunlightClock() {
+  const local = dateParts(localTime, Date.now());
+  if (lastDate !== local.date) {
+    lastDate = local.date;
+    sunset = sunsetMinute(local.date, latitude, longitude, localTime);
+  }
+  return { minute: local.minute, sunset, timeZone };
+}
+
+let timer: NodeJS.Timeout;
+let refresh: (() => void) | undefined;
+
+function init({ matrix, simulatedMinute }: ModeState) {
   const width = matrix.width();
   const height = matrix.height();
-  let localDate: number | undefined;
-  let sunset = minutesPerDay;
   let blank = false;
 
   function render() {
-    const now = Date.now();
-    const local = dateParts(timeZone, now);
-    if (localDate !== local.date) {
-      localDate = local.date;
-      sunset = sunsetMinute(local.date, latitude, longitude, timeZone);
-    }
-    const look = sunlightLook(local.minute, sunset);
+    const local = readSunlightClock();
+    const look = sunlightLook(simulatedMinute?.() ?? local.minute, local.sunset);
 
     if (!look) {
       if (!blank) matrix.clear().sync();
@@ -115,10 +123,18 @@ function init({ matrix }: ModeState) {
     timer = setTimeout(render, 66);
   }
 
+  refresh = () => {
+    clearTimeout(timer);
+    render();
+  };
   render();
 }
 
 export const Sunlight = {
   init,
-  deactivate() { clearTimeout(timer); },
+  refresh() { refresh?.(); },
+  deactivate() {
+    clearTimeout(timer);
+    refresh = undefined;
+  },
 };

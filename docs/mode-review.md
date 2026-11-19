@@ -1,6 +1,6 @@
 # Obelisk mode review
 
-This review covers the five visuals and three games available in the remote, including their rendering, input, layout, and start/stop behavior.
+This review covers the five visuals and six games available in the remote, including their rendering, input, layout, and start/stop behavior.
 
 ## Visuals
 
@@ -17,14 +17,17 @@ This review covers the five visuals and three games available in the remote, inc
 | Mode | Code and design review | Next improvement |
 | --- | --- | --- |
 | [Lightcycles](../packages/obelisk-server/modes/lightcycles.index.ts) | The old spawn coordinates were outside compact panels, and movement and rendering ran separately. Spawns and trail lengths now use the configured area, and same-cell collisions are resolved from a single snapshot. The riders are all computer-driven. | Label the current experience as autoplay. For a playable mode, add two-player steering, a ready countdown, and a clear final-rider result. Keep an autonomous preview available as a separate start choice. |
-| [Munchman](../packages/obelisk-server/modes/munchman.index.ts) | Movement now uses the full original maze on every panel. The original walls are turquoise and the corridors have dim pink pellets that disappear when eaten. A camera follows the player when the maze cannot fit, and larger panels can use integer scaling. The main remaining gameplay defect is in the collision and pickup code. Ghost contact only assigns the screen it is already on. The palette does not load power markers, and the power handler changes a local value without updating the game state. | Give collisions, pickups, lives, and the round end one explicit state machine. Verify each outcome and restart in a deterministic test. Then tune a shorter route or stronger local wayfinding for compact panels and make held direction input predictable on touch. |
+| [Stack Duel](../packages/obelisk-server/games/stack-duel.ts) | Solo or two-player falling blocks. Rivals share a piece order and send pressure rows with multi-line clears. | Try pressure timing and piece legibility on the real panel. |
+| [Deep Scan](../packages/obelisk-server/games/deep-scan.ts) | Find four beacons using range hints. A second remote takes the computer’s seat. | Calibrate the range colors for the installed LEDs. |
+| [Signal Run](../packages/obelisk-server/games/signal-run.ts) | A solo gate runner with regenerating phase charges. The scene uses the current panel dimensions. | Tune gate timing for controller latency on the local network. |
+| [Echo Keys](../packages/obelisk-server/games/echo-keys.ts) | A solo memory game with directional shapes and colors. Each successful round adds a cue. | Compare cue readability on a single tile and a wide strip. |
 | [Pong](../packages/obelisk-server/modes/pong.index.ts) | The original step and scoring logic depended on the strip geometry and used inconsistent player indices. Motion, paddles, scores, and win text now fit the available panel with scoring credited to the correct side. Both sides can still fall back to computer control. | Separate joining from restarting so a second controller can enter an active round. Show which paddle a phone controls, add a ready or serve cue, and compare rally speeds on short and wide layouts. |
 
 ## Runtime and configurations
 
 - The server activates one mode at a time. **Turn display off** deactivates it, aborts pending Billboard work, and blanks the panel. Use **OBELISK_START_MODE=off** to leave the display off at startup. Clock still serves as the default for existing setups.
 - Static visuals do not schedule another frame after drawing. Animated effects and games use bounded loops. Simulator frames are delivered only when the display view has subscribers, and a connecting viewer can still read the latest frame.
-- **OBELISK_SIM_LAYOUT** accepts tile columns and rows followed by horizontal chain and vertical parallel counts. The simulator tests cover 128 × 16, 16 × 8, 32 × 32, and 16 × 48. The compact and stacked cases exercise all eight remote modes and verify that turning the display off stops frame updates.
+- **OBELISK_SIM_LAYOUT** accepts tile columns and rows followed by horizontal chain and vertical parallel counts. The simulator tests cover 128 × 16, 8 × 8, 16 × 8, 32 × 32, and 16 × 48. The compact and stacked cases exercise all eleven remote modes and verify that turning the display off stops frame updates.
 - The reviewed modes run through both drawing backends, but the automated checks use the software matrix. Confirm GPIO mapping, brightness, frame cadence, legibility, and input latency on a physical Pi installation.
 - The dormant [DripClock](../packages/obelisk-server/modes/drip-clock.index.ts) and [Pac prototype](../packages/obelisk-server/_pac/index.ts) are outside the current mode registry. DripClock retains completed timers and depends on native bindings. Pac assumes a 128-pixel stride and leaves a very long timeout alive. If either is restored, apply the same layout and lifecycle contract first.
 

@@ -149,3 +149,27 @@
 .Visual-swatches button { min-height: 2.25rem; padding: .35rem; cursor: pointer; }
 .Visual-swatches button[aria-pressed='true'] { border-color: var(--remote-focus); }
 .Visual-swatches button > span { display: block; height: .95rem; border-radius: .16rem; }
+
+.Game-control { padding-inline: .65rem; }
+.Game-status { padding: .55rem .7rem; border: 1px solid #343344; border-radius: .55rem; background: #16151f; }
+.Game-score, .Game-navigation { display: flex; justify-content: center; gap: .5rem; }
+.Game-score { font-size: .76rem; color: #b7b7c4; font-variant-numeric: tabular-nums; }
+.Game-score span { flex: 1; padding: .25rem; border-radius: .25rem; background: #211f2c; }
+.Game-score b { margin-left: .4rem; color: #f8f8fb; }
+.Game-score span.is-local { color: var(--remote-focus); }
+.Game-status p { margin: .4rem 0 0; min-height: 1.2em; }
+.Game-control .DirectionalPad { max-width: 10rem; margin: .3rem auto; }
+.Game-navigation { margin-block-start: .5rem; }
+.Game-control button { cursor: pointer; font-family: inherit; }
+.Game-control button:disabled { cursor: default; opacity: .5; }
+.Game-action {
+  width: min(100%, 10rem);
+  padding: .68rem;
+  border: 1px solid #74b6a9;
+  border-radius: .5rem;
+  background: #22443e;
+  color: #e5fff4;
+  font-size: .86rem;
+  font-weight: 670;
+}
+.Game-action:hover { background: #2b574e; }

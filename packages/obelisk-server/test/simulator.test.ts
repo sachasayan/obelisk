@@ -6,7 +6,10 @@ import { test } from 'node:test';
 import type { TestContext } from 'node:test';
 import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
-import { MUNCHMAN_MOVE } from '../../../shared/munchman';
+import { GAME_INPUT, GAME_JOIN, GAME_STATUS, games } from '../../../shared/games';
+import type { GameStatus } from '../../../shared/games';
+import { MINUTES_PER_DAY, SIMULATOR_SETTINGS, UPDATE_SIMULATOR_SETTINGS } from '../../../shared/simulator';
+import type { SimulatorSettings } from '../../../shared/simulator';
 import { DISPLAY_FRAME, DISPLAY_NAMESPACE } from '../../../shared/panel';
 import type { PanelFrame } from '../../../shared/panel';
 import { UPDATE_VISUAL_SETTINGS } from '../../../shared/visual-settings';
@@ -134,27 +137,6 @@ test('the simulator renders real modes and reflects live controller input', { ti
   controller.emit('changeMode', 'lightcycles');
   await lightcyclesFrame;
 
-  const opened = new Promise((resolve) => controller.once('obeliskInitController', resolve));
-  const movedRight = waitForFrame(viewer, (frame) =>
-    frame.mode === 'munchman' && pixel(frame, 2, 1).join() === '255,255,0');
-  controller.emit('changeMode', 'munchman');
-  controller.emit(MUNCHMAN_MOVE, 'right');
-  assert.equal(await opened, 'munchman');
-  const right = await movedRight;
-  assert.deepEqual(pixel(right, 0, 0), [22, 180, 188]);
-  assert.deepEqual(pixel(right, 3, 1), [0, 0, 0]);
-  assert.deepEqual(pixel(right, 4, 1), [104, 39, 70]);
-
-  const afterWall = waitForFrame(viewer, (frame) =>
-    frame.mode === 'munchman' && frame.sequence >= right.sequence + 20);
-  controller.emit(MUNCHMAN_MOVE, 'up');
-  assert.deepEqual(pixel(await afterWall, 2, 1), [255, 255, 0]);
-
-  const movedLeft = waitForFrame(viewer, (frame) =>
-    frame.mode === 'munchman' && pixel(frame, 1, 1).join() === '255,255,0');
-  controller.emit(MUNCHMAN_MOVE, 'left');
-  assert.deepEqual(pixel(await movedLeft, 2, 1), [0, 0, 0]);
-
   const lowerPaddle = waitForFrame(viewer, (frame) =>
     frame.mode === 'pong' && pixel(frame, 0, 12)[0] === 255 && pixel(frame, 0, 3)[0] === 0);
   controller.emit('changeMode', 'pong');
@@ -182,6 +164,7 @@ test('the calibration pattern is still available at startup', { timeout: 5000 },
 
 test('all remote modes render on small and stacked panels, and off stops frame updates', { timeout: 25_000 }, async (t) => {
   for (const [layout, width, height, tileWidth, tileHeight] of [
+    ['8x8:1x1', 8, 8, 8, 8],
     ['8x8:2x1', 16, 8, 8, 8],
     ['16x16:2x2', 32, 32, 16, 16],
     ['16x16:1x3', 16, 48, 16, 16],
@@ -200,7 +183,7 @@ test('all remote modes render on small and stacked panels, and off stops frame u
       assert.deepEqual([off.width, off.height, off.tileWidth, off.tileHeight], [width, height, tileWidth, tileHeight]);
       assert.equal(off.rgb.some(Boolean), false);
 
-      for (const mode of ['billboard', 'clock', 'pulse', 'space', 'sunlight', 'lightcycles', 'munchman', 'pong']) {
+      for (const mode of ['billboard', 'clock', 'pulse', 'space', 'sunlight', 'lightcycles', 'pong', ...Object.keys(games)]) {
         const painted = waitForFrame(viewer, (frame) => frame.mode === mode && (mode === 'sunlight' || frame.rgb.some(Boolean)));
         controller.emit('changeMode', mode);
         assert.equal((await painted).rgb.length, width * height * 3, mode);
@@ -215,5 +198,93 @@ test('all remote modes render on small and stacked panels, and off stops frame u
       });
       assert.equal(unexpected, false, 'the previous animation did not schedule another frame');
     });
+  }
+});
+
+test('simulated time controls Sunlight immediately and layout and brightness apply to the live panel', { timeout: 8000 }, async (t) => {
+  const url = await startSimulator(t, { OBELISK_SUNLIGHT_TIME_ZONE: 'America/Toronto' });
+  const viewer = io(url + DISPLAY_NAMESPACE, { autoConnect: false, transports: ['websocket'] });
+  t.after(() => { viewer.disconnect(); });
+
+  const settings = receive(viewer, SIMULATOR_SETTINGS);
+  viewer.connect();
+  const initial = await settings as SimulatorSettings;
+  assert.equal(initial.minute, null);
+  assert.equal(initial.layout, '32x16:4x1');
+  assert.ok(initial.sunset !== null);
+  const { sunset } = initial;
+
+  function total(frame: Frame, channel: number) {
+    return frame.rgb.reduce((sum, value, i) => i % 3 === channel ? sum + value : sum, 0);
+  }
+
+  const warm = waitForFrame(viewer, (frame) => frame.mode === 'sunlight' && total(frame, 0) > total(frame, 2) * 1.6);
+  viewer.emit(UPDATE_SIMULATOR_SETTINGS, { minute: Math.round(sunset + (MINUTES_PER_DAY - sunset) * .1) });
+  await warm;
+  const blue = waitForFrame(viewer, (frame) => frame.mode === 'sunlight' && total(frame, 2) > total(frame, 0) * 2);
+  viewer.emit(UPDATE_SIMULATOR_SETTINGS, { minute: Math.round(sunset + (MINUTES_PER_DAY - sunset) * .82) });
+  await blue;
+  const midnight = waitForFrame(viewer, (frame) => frame.mode === 'sunlight' && !frame.rgb.some(Boolean));
+  viewer.emit(UPDATE_SIMULATOR_SETTINGS, { minute: MINUTES_PER_DAY });
+  await midnight;
+
+  const reset = receive(viewer, SIMULATOR_SETTINGS);
+  const resized = waitForFrame(viewer, (frame) => frame.width === 16 && frame.height === 48 && frame.brightness === 43);
+  viewer.emit(UPDATE_SIMULATOR_SETTINGS, { minute: null, layout: '16x16:1x3', brightness: 43 });
+  assert.equal((await reset as SimulatorSettings).minute, null);
+  assert.equal((await resized).rgb.length, 16 * 48 * 3);
+
+  const rejected = receive(viewer, SIMULATOR_SETTINGS);
+  viewer.emit(UPDATE_SIMULATOR_SETTINGS, { minute: -1, layout: '4000x4000:1x1', brightness: 101 });
+  const current = await rejected as SimulatorSettings;
+  assert.equal(current.minute, null);
+  assert.equal(current.layout, '16x16:1x3');
+  assert.equal(current.brightness, 43);
+});
+
+function waitForGame(socket: Socket, predicate: (value: GameStatus) => boolean) {
+  return new Promise<GameStatus>((resolve) => {
+    function listener(value: GameStatus | null) {
+      if (!value || !predicate(value)) return;
+      socket.off(GAME_STATUS, listener);
+      resolve(value);
+    }
+    socket.on(GAME_STATUS, listener);
+  });
+}
+
+test('two remotes join one round and playing a game updates the panel', { timeout: 12_000 }, async (t) => {
+  const url = await startSimulator(t);
+  const viewer = io(url + DISPLAY_NAMESPACE, { autoConnect: false, transports: ['websocket'] });
+  const first = io(url, { autoConnect: false, transports: ['websocket'] });
+  const second = io(url, { autoConnect: false, transports: ['websocket'] });
+  t.after(() => { viewer.disconnect(); first.disconnect(); second.disconnect(); });
+  viewer.connect();
+  const assigned = [receive(first, 'obeliskAssignUser'), receive(second, 'obeliskAssignUser')];
+  first.connect();
+  second.connect();
+  await Promise.all(assigned);
+
+  for (const mode of ['deep-scan', 'stack-duel', 'signal-run', 'echo-keys'] as const) {
+    const modeFrame = waitForFrame(viewer, (frame) => frame.mode === mode);
+    const primary = waitForGame(first, (status) => status.mode === mode && status.seat === 0);
+    first.emit('changeMode', mode);
+    first.emit(GAME_JOIN, mode);
+    await primary;
+    await modeFrame;
+
+    if (games[mode].players === 2) {
+      const joined = waitForGame(second, (status) => status.mode === mode && status.seat === 1 && status.players === 2);
+      second.emit('changeMode', mode);
+      second.emit(GAME_JOIN, mode);
+      await joined;
+    }
+
+    const latestPaint = waitForFrame(viewer, (frame) => frame.mode === mode && frame.rgb.some(Boolean));
+    first.emit(GAME_INPUT, { mode, action: 'restart' });
+    const before = await latestPaint;
+    const modified = waitForFrame(viewer, (frame) => frame.mode === mode && !frame.rgb.equals(before.rgb));
+    first.emit(GAME_INPUT, { mode, action: mode === 'signal-run' ? 'up' : 'action' });
+    await modified;
   }
 });

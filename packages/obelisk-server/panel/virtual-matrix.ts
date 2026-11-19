@@ -13,7 +13,7 @@ function rgb(color: Color | number): [number, number, number] {
 }
 
 export class VirtualMatrix implements PanelMatrix {
-  private readonly buffer: Buffer;
+  private buffer: Buffer;
   private readonly started = performance.now();
   private lastSync = this.started - frameInterval;
   private presentTimer?: NodeJS.Timeout;
@@ -26,13 +26,18 @@ export class VirtualMatrix implements PanelMatrix {
   private frame: PanelFrame<Buffer>;
 
   constructor(
-    private readonly geometry: PanelGeometry,
+    private geometry: PanelGeometry,
     brightness: number,
     private readonly publish: (frame: PanelFrame<Buffer>) => void,
   ) {
     this.buffer = Buffer.alloc(this.width() * this.height() * 3);
     this.level = brightness;
     this.frame = this.snapshot(0);
+  }
+
+  configure(geometry: PanelGeometry) {
+    this.geometry = geometry;
+    this.buffer = Buffer.alloc(this.width() * this.height() * 3);
   }
 
   width() { return this.geometry.width; }

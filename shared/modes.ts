@@ -1,4 +1,4 @@
-import { MUNCHMAN_CONTROLLER_PATH } from './munchman';
+import { games, isGameMode } from './games';
 
 export const modeGroups = [
   {
@@ -15,8 +15,8 @@ export const modeGroups = [
     title: 'Games',
     modes: [
       ['lightcycles', 'Lightcycles'],
-      ['munchman', 'Munchman'],
       ['pong', 'Pong'],
+      ...Object.keys(games).filter(isGameMode).map((mode) => [mode, games[mode].title] as const),
     ],
   },
 ] as const;
@@ -25,7 +25,10 @@ export type ModeName = (typeof modeGroups)[number]['modes'][number][0] | 'exit';
 
 export const controllerPaths = {
   pong: '/controller',
-  munchman: MUNCHMAN_CONTROLLER_PATH,
+  'stack-duel': '/controller/stack-duel',
+  'deep-scan': '/controller/deep-scan',
+  'signal-run': '/controller/signal-run',
+  'echo-keys': '/controller/echo-keys',
   pulse: '/controller/pulse',
   clock: '/controller/clock',
 } as const;

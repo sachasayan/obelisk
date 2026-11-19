@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
+import { GAME_STATUS } from '../../../../shared/games';
+import type { GameStatus } from '../../../../shared/games';
 import { controllerPath } from '../../../../shared/modes';
 import { applyVisualSettings, defaultVisualSettings, UPDATE_VISUAL_SETTINGS, VISUAL_SETTINGS } from '../../../../shared/visual-settings';
 import type { VisualSettings, VisualSettingsUpdate } from '../../../../shared/visual-settings';
@@ -11,6 +13,7 @@ interface ConnectionState {
   socket: Socket;
   user: number;
   visualSettings: VisualSettings;
+  gameStatus: GameStatus | null;
   updateVisualSettings(update: VisualSettingsUpdate): void;
 }
 
@@ -19,6 +22,7 @@ export const ConnectionContext = createContext<ConnectionState | undefined>(unde
 export function ConnectProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [socket] = useState(() => io({ autoConnect: false }));
+  const [gameStatus, setGameStatus] = useState<GameStatus | null>(null);
   const [user, setUser] = useState(-1);
   const [visualSettings, setVisualSettings] = useState(defaultVisualSettings);
   const openController = useEffectEvent((mode: unknown) => {
@@ -32,12 +36,13 @@ export function ConnectProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const resetUser = () => setUser(-1);
+    const resetUser = () => { setUser(-1); setGameStatus(null); };
     const initController = (mode: unknown) => openController(mode);
 
     socket.on('obeliskAssignUser', setUser);
     socket.on('obeliskInitController', initController);
     socket.on(VISUAL_SETTINGS, setVisualSettings);
+    socket.on(GAME_STATUS, setGameStatus);
     socket.on('disconnect', resetUser);
     socket.connect();
 
@@ -45,13 +50,14 @@ export function ConnectProvider({ children }: { children: ReactNode }) {
       socket.off('obeliskAssignUser', setUser);
       socket.off('obeliskInitController', initController);
       socket.off(VISUAL_SETTINGS, setVisualSettings);
+      socket.off(GAME_STATUS, setGameStatus);
       socket.off('disconnect', resetUser);
       socket.disconnect();
     };
   }, [socket]);
 
   return (
-    <ConnectionContext.Provider value={{ socket, user, visualSettings, updateVisualSettings }}>
+    <ConnectionContext.Provider value={{ socket, user, visualSettings, updateVisualSettings, gameStatus }}>
       {children}
     </ConnectionContext.Provider>
   );

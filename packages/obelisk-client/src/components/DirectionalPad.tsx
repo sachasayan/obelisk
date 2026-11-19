@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
+import type { GameDirection } from '../../../../shared/games';
 import './DirectionalPad.css';
 
 const directions = [
@@ -9,7 +10,7 @@ const directions = [
   { name: 'left', x: 53, y: 120, rotation: -Math.PI / 2, shortcut: 'ArrowLeft A' },
 ] as const;
 
-export type Direction = (typeof directions)[number]['name'];
+type Direction = GameDirection;
 
 const faceSize = 240;
 const bitmapSize = 600;
@@ -101,10 +102,11 @@ function paint(canvas: HTMLCanvasElement, active: Direction | undefined) {
   ctx.stroke();
 }
 
-export default function DirectionalPad({ id, label, disabled, onDirection }: {
+export default function DirectionalPad({ id, label, disabled, repeat = true, onDirection }: {
   id: string;
   label: string;
   disabled: boolean;
+  repeat?: boolean;
   onDirection: (direction: Direction) => void;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -119,13 +121,13 @@ export default function DirectionalPad({ id, label, disabled, onDirection }: {
 
   useEffect(() => {
     if (canvas.current) paint(canvas.current, disabled ? undefined : active);
-    if (disabled || !active) return;
+    if (disabled || !active || !repeat) return;
 
     const timer = window.setInterval(() => {
       if (pointer.current?.direction === active) sendRepeat(active);
     }, 120);
     return () => window.clearInterval(timer);
-  }, [active, disabled]);
+  }, [active, disabled, repeat]);
 
   useEffect(() => {
     window.addEventListener('blur', release);

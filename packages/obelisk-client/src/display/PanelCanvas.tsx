@@ -21,6 +21,7 @@ export default function PanelCanvas({ frame, grid }: { frame: DisplayFrame; grid
 
   const panelStyle = {
     aspectRatio: width / height,
+    '--panel-ratio': width / height,
     '--pixel-width': `${100 / width}%`,
     '--pixel-height': `${100 / height}%`,
   } as CSSProperties;
