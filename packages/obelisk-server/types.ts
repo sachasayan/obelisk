@@ -1,7 +1,6 @@
 enum CliMode {
   Billboard = 'billboard',
   Lightcycles = 'lightcycles',
-  Munchman = 'munchman',
   Pac = 'pac',
   Pong = 'pong',
   Pulse = 'pulse',

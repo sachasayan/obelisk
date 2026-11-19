@@ -1,41 +1,22 @@
+import type { ModeState } from '../panel/types';
 
-
-const wait = (t: number) => new Promise(ok => setTimeout(ok, t));
-
-function init (state){
-  let { matrix } = state;
-  (async () => {
-      matrix.clear();
-
-      matrix
-        .clear()            // clear the display
-        .brightness(100)    // set the panel brightness to 100%
-        .fgColor(0x0000FF)  // set the active color to blue
-        .fill()             // color the entire diplay blue
-        .fgColor(0xFFFF00)  // set the active color to yellow
-        // draw a yellow circle around the display
-        .drawCircle(matrix.width() / 2, matrix.height() / 2, matrix.width() / 2 - 1)
-        // draw a yellow rectangle
-        .drawRect(matrix.width() / 4, matrix.height() / 4, matrix.width() / 2, matrix.height() / 2)
-        // sets the active color to red
-        .fgColor({ r: 255, g: 0, b: 0 })
-        // draw two diagonal red lines connecting the corners
-        .drawLine(0, 0, matrix.width(), matrix.height())
-        .drawLine(matrix.width() - 1, 0, 0, matrix.height() - 1)
-        .sync();
-
-      matrix.sync();
-      await wait(999999999);
-  })();
+export const Test = {
+  init({ matrix }: ModeState) {
+    const width = matrix.width();
+    const height = matrix.height();
+    const centerX = Math.floor((width - 1) / 2);
+    const centerY = Math.floor((height - 1) / 2);
+    matrix
+      .clear()
+      .fgColor(0x0000ff)
+      .fill()
+      .fgColor(0xffff00)
+      .drawCircle(centerX, centerY, Math.min(centerX, centerY))
+      .drawRect(Math.floor(width / 4), Math.floor(height / 4), Math.floor(width / 2), Math.floor(height / 2))
+      .fgColor({ r: 255, g: 0, b: 0 })
+      .drawLine(0, 0, width - 1, height - 1)
+      .drawLine(width - 1, 0, 0, height - 1)
+      .sync();
+  },
+  deactivate() {},
 };
-
-function deactivate() {
-}
-
-let Test = { init, deactivate };
-
-
-export { Test };
-
-
-

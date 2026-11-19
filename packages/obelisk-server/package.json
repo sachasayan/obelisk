@@ -1,32 +1,39 @@
 {
   "name": "obelisk-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "type": "commonjs",
   "scripts": {
-    "obelisk": "ts-node index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "obelisk": "node --import tsx index.ts",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "simulate": "node --import tsx index.ts --simulate"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sachasayan/obelisk-server.git"
+    "url": "git+https://github.com/sachasayan/obelisk.git"
   },
-  "author": "",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/sachasayan/obelisk/issues"
   },
   "homepage": "https://github.com/sachasayan/obelisk#readme",
   "dependencies": {
-    "@types/node": "^13.7.2",
-    "chroma-js": "^2.1.0",
-    "express": "4.9.x",
-    "jimp": "^0.9.3",
+    "chroma-js": "^3.3.0",
+    "express": "^5.3.0",
+    "gtfs-realtime-bindings": "^3.0.0",
     "node-dyndns-client": "^0.2.3",
-    "prompts": "^2.3.1",
-    "rpi-led-matrix": "^1.9.0",
-    "socket.io": "latest",
-    "ts-node": "^8.6.2",
-    "typescript": "^3.7.5"
+    "pngjs": "^7.0.0",
+    "rpi-led-matrix": "^1.15.0",
+    "socket.io": "^4.8.4",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@types/chroma-js": "^3.1.3",
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.0.0",
+    "@types/pngjs": "^6.0.5",
+    "socket.io-client": "^4.8.4",
+    "typescript": "^7.0.2"
   }
 }

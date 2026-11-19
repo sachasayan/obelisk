@@ -1,6 +1,6 @@
 import { Billboard } from './billboard.index';
+import { LavaLamp } from './lava-lamp.index';
 import { Lightcycles } from './lightcycles.index';
-import { Munchman } from './munchman.index';
 import { Pong } from './pong.index';
 import { Pulse } from './pulse.index';
 import { Space } from './space.index';
@@ -13,8 +13,8 @@ import { Clock } from './clock.index';
 export {
   Billboard,
   Clock,
+  LavaLamp,
   Lightcycles,
-  Munchman,
   Pong,
   Pulse,
   Space,

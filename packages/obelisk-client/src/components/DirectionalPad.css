@@ -1,0 +1,45 @@
+.DirectionalPad {
+  position: relative;
+  width: min(100%, 15rem);
+  margin: 0 auto 1rem;
+}
+
+.DirectionalPad canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 50%;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.DirectionalPad canvas:active { cursor: grabbing; }
+.DirectionalPad canvas[aria-disabled="true"] { opacity: .48; cursor: default; }
+
+.DirectionalPad-shortcuts:not(:focus-within) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.DirectionalPad-shortcuts:focus-within {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .35rem;
+  margin-top: .6rem;
+}
+
+.DirectionalPad-shortcuts button {
+  min-height: 2.65rem;
+  border: 1px solid #635344;
+  border-radius: .35rem;
+  background: #292520;
+  color: #fff0b0;
+  font: inherit;
+  font-size: .82rem;
+}

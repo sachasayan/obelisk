@@ -1,12 +1,14 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import 'typeface-bebas-neue';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import '@fontsource/bebas-neue';
 import './index.css';
 import App from './App';
 
-ReactDOM.render(
-  <React.StrictMode>
-      <App />
-  </React.StrictMode>,
-  document.getElementById('root')
+const root = document.getElementById('root');
+if (!root) throw new Error('Obelisk could not find its root element.');
+
+createRoot(root).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
 );

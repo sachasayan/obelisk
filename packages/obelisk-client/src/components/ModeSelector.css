@@ -1,20 +1,92 @@
-.ModeSelector {
-  text-align: center;
+.ModeSelector-group + .ModeSelector-group {
+  margin-top: clamp(.75rem, 3vw, 1rem);
 }
 
-.ModeSelector .Paper {
-  background: #333;
-  text-align: right;
-  margin: 20px;
-  padding: 20px;
-  background-size: cover;
-  background-position: center;
+.ModeSelector-group h2 {
+  margin: 0 .23rem .36rem;
+  font-size: clamp(.85rem, 3.7vw, 1.05rem);
+  font-weight: 720;
+  color: #dadce4;
+}
+
+.ModeSelector-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(.38rem, 1.6vw, .65rem);
+}
+
+.ModePoster {
+  position: relative;
+  display: grid;
+  isolation: isolate;
+  align-items: end;
+  aspect-ratio: 1.85;
+  min-width: 0;
+  min-height: 4.3rem;
   overflow: hidden;
-  max-width: 600px;
+  padding: clamp(.36rem, 1.8vw, .68rem) clamp(.45rem, 2.1vw, .8rem);
+  border: 1px solid #27212f;
+  border-radius: clamp(.52rem, 2.25vw, .88rem);
+  background: #101018;
+  color: #fff;
+  font: inherit;
+  font-size: clamp(.82rem, 4vw, 1.38rem);
+  font-weight: 720;
+  line-height: 1.08;
+  letter-spacing: -.025em;
+  text-align: left;
+  cursor: pointer;
 }
 
-.ModeSelector .Button {
-  box-shadow: 0px 0px 500px 200px rgba(0,0,0,0.8);
+.ModePoster img, .ModePoster::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
+.ModePoster img {
+  object-fit: cover;
+  pointer-events: none;
+}
 
+.ModePoster::after {
+  content: '';
+  background: linear-gradient(0deg, #04050cde 0%, #04050c83 21%, transparent 62%);
+  pointer-events: none;
+}
+
+.ModePoster span { text-shadow: 0 1px 5px #000; }
+
+.ModePoster:active:not(:disabled) {
+  border-color: #6cbcb2;
+  filter: brightness(.82);
+}
+
+.ModePoster:disabled, .ModeSelector-exit:disabled {
+  opacity: .58;
+  cursor: default;
+}
+
+.ModeSelector-exit {
+  display: block;
+  min-width: 5rem;
+  min-height: 2.75rem;
+  margin: .65rem auto .4rem;
+  padding: .45rem .75rem;
+  border: 1px solid #27212f;
+  border-radius: .48rem;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .ModePoster:not(:disabled):hover { border-color: #636276; }
+  .ModeSelector-exit:not(:disabled):hover { background: #191823; }
+}

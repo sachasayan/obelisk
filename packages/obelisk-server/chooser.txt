@@ -12,8 +12,7 @@ if (config.initPanel) {
           { value: CliMode.Billboard, title:'🔤 => Billboard' },
           { value: CliMode.Pong, title:'🎾 => Pong' },
           { value: CliMode.Lightcycles, title:'🏍\s => Lightcycles' },
-          { value: CliMode.Munchman, title:  '🟡 => Munchman' },
-          { value: CliMode.Space, title: '🚀 => Space Adventure' },
+          { value: CliMode.Space, title: '✦ => Starry Night' },
           { value: CliMode.Pulse, title:'🕺 => Twinkle' },
           { value: CliMode.Exit, title: '🚪 => Exit' },
           { value: CliMode.Sunlight, title: '🟠 => Sunlight' },
@@ -40,11 +39,6 @@ if (config.initPanel) {
           case CliMode.Test: {
             matrix.afterSync(() => {});
             Test.init(matrix);
-            break;
-          }
-          case CliMode.Munchman: {
-            matrix.afterSync(() => {});
-            Munchman.init(matrix);
             break;
           }
           case CliMode.Space: {

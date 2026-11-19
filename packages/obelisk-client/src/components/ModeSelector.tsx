@@ -1,45 +1,40 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
+import { modeGroups } from '../../../../shared/modes';
+import type { ModeName } from '../../../../shared/modes';
+import { ConnectionContext } from '../providers/ConnectionContext';
 import './ModeSelector.css';
-import {
-  Button,
-  Grid,
-  Paper
-}  from '@material-ui/core';
-import { ConnectionContext, ConnectionState } from '../providers/ConnectionContext';
 
+export default function ModeSelector() {
+  const connection = useContext(ConnectionContext);
+  const disabled = !connection || connection.user < 0;
 
-function ModeSelector() {
-  let connection: ConnectionState | undefined = useContext(ConnectionContext);
-  let modes = [
-    'billboard',
-    'clock',
-    'lightcycles',
-    'munchman',
-    'pong',
-    'pulse',
-    'space',
-    'sunlight',
-    'test',
-    'exit',
-  ];
-
-  const changeMode = (mode: string) => {
-    console.log('Changing mode... ', mode);
-    connection?.socket.emit('changeMode', mode);
+  function select(mode: ModeName) {
+    if (connection?.socket.connected) connection.socket.emit('changeMode', mode);
   }
-  return (
-    <>
-      <Grid item className="ModeSelector">
-        {modes.map((m) => (
-          <Paper className="Paper" key={m} elevation={3} style={{backgroundImage: `url(/modes/${m}.jpg)`}} >
-            <Button className="Button" variant="contained" color="primary" aria-label="delete"  onClick={() => {changeMode(m)} }>
-            {m}
-            </Button>
-          </Paper>
-        ))}
-      </Grid>
-    </>
-  )
-}
 
-export default ModeSelector;
+  return (
+    <div className="ModeSelector">
+      {modeGroups.map(({ title, modes }) => (
+        <section className="ModeSelector-group" key={title} aria-labelledby={`modes-${title.toLowerCase()}`}>
+          <h2 id={`modes-${title.toLowerCase()}`}>{title}</h2>
+          <div className="ModeSelector-grid">
+            {modes.map(([mode, label]) => (
+              <button type="button" className="ModePoster" key={mode} disabled={disabled} onClick={() => select(mode)}>
+                <img src={`/posters/${mode}.webp`} alt="" decoding="async" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      ))}
+      <button
+        type="button"
+        className="ModeSelector-exit"
+        disabled={disabled}
+        onClick={() => select('exit')}
+      >
+        Turn display off
+      </button>
+    </div>
+  );
+}
