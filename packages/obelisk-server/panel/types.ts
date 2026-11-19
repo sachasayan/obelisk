@@ -1,4 +1,5 @@
 import type { Color, FontInstance } from 'rpi-led-matrix';
+import type { VisualSettings } from '../../../shared/visual-settings';
 
 export interface PanelMatrix {
   afterSync(hook: (matrix: PanelMatrix, dt: number, time: number) => void): this;
@@ -26,4 +27,5 @@ export interface ModeState {
   matrix: PanelMatrix;
   playerData: (PlayerData | undefined)[];
   loadFont(name: string): FontInstance;
+  visualSettings(): VisualSettings;
 }

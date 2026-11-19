@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
 import { createControllerServer } from '../index';
+import { defaultVisualSettings, UPDATE_VISUAL_SETTINGS, VISUAL_SETTINGS } from '../../../shared/visual-settings';
 
 function receive(socket: Socket, event: string) {
   return new Promise<unknown>((resolve) => socket.once(event, resolve));
@@ -30,8 +31,10 @@ test('a disconnected player leaves the remaining controller in the correct slot'
   });
 
   const firstAssignment = receive(first, 'obeliskAssignUser');
+  const firstSettings = receive(first, VISUAL_SETTINGS);
   first.connect();
   assert.equal(await firstAssignment, 0);
+  assert.deepEqual(await firstSettings, defaultVisualSettings);
 
   const secondAssignment = receive(second, 'obeliskAssignUser');
   second.connect();
@@ -39,10 +42,15 @@ test('a disconnected player leaves the remaining controller in the correct slot'
 
   const opened = receive(second, 'obeliskInitController');
   second.emit('drawing', { x: 0.5, y: 0.75, player: 1 });
+  second.emit('changeMode', 'test');
   second.emit('changeMode', 'pong');
   assert.equal(await opened, 'pong');
   assert.deepEqual(selected, ['pong']);
   assert.deepEqual(playerData, [undefined, { y: 0.75 }]);
+
+  const sharedSettings = receive(first, VISUAL_SETTINGS);
+  second.emit(UPDATE_VISUAL_SETTINGS, { mode: 'pulse', color: '#CA582B', intensity: -1 });
+  assert.deepEqual(await sharedSettings, { ...defaultVisualSettings, pulse: { color: '#ca582b', intensity: 100 } });
 
   const reassigned = receive(second, 'obeliskAssignUser');
   first.disconnect();

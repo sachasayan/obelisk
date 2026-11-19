@@ -1,17 +1,17 @@
 enum BASE_COLORS {
-  'wall'   = 0x1919A6,
+  'wall'   = 0x16B4BC,
   'player' = 0xFFFF00,
   'inky'   = 0xFF0000,
   'binky'  = 0xFFB8FF,
   'pinky'  = 0x00FFFF,
   'clyde'  = 0xFFB852,
   'empty'  = 0x000000,
-  'dot'    = 0x040404
+  'dot'    = 0x682746
 };
 
 enum MAP_LOOKUP {
   '#3f51b5' = 'W',
-  '#000000' = 'O',
+  '#000000' = 'D',
   '#333333' = 'O',
   '#ffffff' = 'O',
   '#00ff00' = 'W'

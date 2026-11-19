@@ -48,12 +48,15 @@ let gameSettings: MunchGameSettings = {
 let gameState: MunchGameState;
 
 function resetGame() {
+  const field = gameSettings.grid.trim().split('\n').map(row => row.split(''));
+  const player = new Player();
+  if (field[player.y]?.[player.x] === 'D') field[player.y][player.x] = 'O';
   gameState = {
     activeScreen: STATUS.PLAYING_GAME,
-    field: gameSettings.grid.trim().split('\n').map(row => row.split('')),
+    field,
     sickoMode: false,
     ghosts: [new Ghost('inky', 62, 7), new Ghost('binky', 62, 8), new Ghost('pinky', 64, 7), new Ghost('clyde', 64, 8)],
-    player: new Player(),
+    player,
     animations: {
      ghostOffset: 0
     }
@@ -228,7 +231,9 @@ function init(state: ModeState) {
         for (let y = 0; y < img.height; y++) {
           for (let x = 0; x < img.width; x++) {
             const offset = (y * img.width + x) * 4;
-            gameSettings.grid += MAP_LOOKUP[chroma(img.data.readUIntBE(offset, 3)).hex()] ?? 'W';
+            const tile = MAP_LOOKUP[chroma(img.data.readUIntBE(offset, 3)).hex()] ?? 'W';
+            // Leave one unlit cell between pellets along the corridors.
+            gameSettings.grid += tile === 'D' && (x + y) % 2 === 0 ? 'O' : tile;
           }
           gameSettings.grid += '\n';
         }

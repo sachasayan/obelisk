@@ -5,11 +5,12 @@ import express from 'express';
 import { Server } from 'socket.io';
 import type { Socket } from 'socket.io';
 import type { FontInstance } from 'rpi-led-matrix';
-import { findMode } from '../../shared/modes';
+import { controllerPath, controllerPaths, findMode } from '../../shared/modes';
 import type { ModeName } from '../../shared/modes';
-import { isMunchmanDirection, MUNCHMAN_CONTROLLER_PATH, MUNCHMAN_MOVE } from '../../shared/munchman';
+import { isMunchmanDirection, MUNCHMAN_MOVE } from '../../shared/munchman';
 import type { MunchmanDirection } from '../../shared/munchman';
 import { DISPLAY_CAPABILITY, DISPLAY_FRAME, DISPLAY_NAMESPACE } from '../../shared/panel';
+import { applyVisualSettings, defaultVisualSettings, UPDATE_VISUAL_SETTINGS, VISUAL_SETTINGS } from '../../shared/visual-settings';
 import { config, getHardwareOptions, panelOptions } from './config';
 import { BitmapFont } from './panel/bitmap-font';
 import { resolveSimLayout } from './panel/sim-layout';
@@ -31,11 +32,13 @@ export function createControllerServer(
     },
   });
   const sockets: Socket[] = [];
+  let visualSettings = defaultVisualSettings;
 
   io.on('connection', (socket) => {
     const player = sockets.push(socket) - 1;
     playerData.push(undefined);
     socket.emit('obeliskAssignUser', player);
+    socket.emit(VISUAL_SETTINGS, visualSettings);
 
     socket.on('changeMode', (value: unknown) => {
       if (typeof value !== 'string') return;
@@ -44,7 +47,14 @@ export function createControllerServer(
       if (!mode) return;
 
       changeMode(mode);
-      if (mode === 'pong' || mode === 'munchman') socket.emit('obeliskInitController', mode);
+      if (controllerPath(mode)) socket.emit('obeliskInitController', mode);
+    });
+
+    socket.on(UPDATE_VISUAL_SETTINGS, (value: unknown) => {
+      const next = applyVisualSettings(visualSettings, value);
+      if (next === visualSettings) return;
+      visualSettings = next;
+      io.emit(VISUAL_SETTINGS, visualSettings);
     });
 
     socket.on(MUNCHMAN_MOVE, (value: unknown) => {
@@ -81,18 +91,20 @@ export function createControllerServer(
 
   const clientBuild = resolve(__dirname, '../obelisk-client/build');
   app.use(express.static(clientBuild));
-  app.get(['/controller', MUNCHMAN_CONTROLLER_PATH, '/display'], (_request, response) => {
+  app.get([...Object.values(controllerPaths), '/display'], (_request, response) => {
     response.sendFile(join(clientBuild, 'index.html'));
   });
 
-  return { http, io };
+  return { http, io, getVisualSettings: () => visualSettings };
 }
+
+type StartMode = ModeName | 'test';
 
 function main() {
   const simulate = process.argv.includes('--simulate');
   const startValue = process.env.OBELISK_START_MODE?.toLowerCase();
-  const startMode = startValue === 'off' ? 'exit' : findMode(startValue ?? 'clock');
-  if (!startMode) throw new Error('OBELISK_START_MODE must be a display mode or off.');
+  const startMode = startValue === 'off' ? 'exit' : startValue === 'test' ? 'test' : findMode(startValue ?? 'clock');
+  if (!startMode) throw new Error('OBELISK_START_MODE must be a display mode, test, or off.');
   const playerData: (PlayerData | undefined)[] = [];
   const fonts = new Map<string, FontInstance>();
   let createFont = (name: string, path: string): FontInstance => new BitmapFont(name, path);
@@ -145,9 +157,9 @@ function main() {
     test: panelModes?.Test,
     exit: undefined,
   };
-  let activeMode: typeof modes[ModeName];
+  let activeMode: typeof modes[StartMode];
 
-  function changeMode(mode: ModeName) {
+  function changeMode(mode: StartMode) {
     if (config.verbose) console.log('Changing mode to', mode);
     if (!matrix) return;
 
@@ -156,7 +168,9 @@ function main() {
     matrix.afterSync(() => {});
     matrix.brightness(panelOptions.brightness).clear();
     activeMode = modes[mode];
-    if (activeMode) activeMode.init({ matrix, playerData, loadFont });
+    if (activeMode) {
+      activeMode.init({ matrix, playerData, loadFont, visualSettings: () => controller?.getVisualSettings() ?? defaultVisualSettings });
+    }
     else matrix.sync();
   }
 

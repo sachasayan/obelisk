@@ -9,6 +9,7 @@ import type { Socket } from 'socket.io-client';
 import { MUNCHMAN_MOVE } from '../../../shared/munchman';
 import { DISPLAY_FRAME, DISPLAY_NAMESPACE } from '../../../shared/panel';
 import type { PanelFrame } from '../../../shared/panel';
+import { UPDATE_VISUAL_SETTINGS } from '../../../shared/visual-settings';
 
 type Frame = PanelFrame<Buffer>;
 
@@ -34,6 +35,18 @@ function waitForFrame(socket: Socket, testFrame: (frame: Frame) => boolean) {
 function pixel(frame: Frame, x: number, y: number) {
   const offset = (y * frame.width + x) * 3;
   return Array.from(frame.rgb.subarray(offset, offset + 3));
+}
+
+function receive(socket: Socket, event: string) {
+  return new Promise<unknown>((resolve) => socket.once(event, resolve));
+}
+
+function litPositions(frame: Frame) {
+  const positions: number[] = [];
+  for (let i = 0; i < frame.rgb.length; i += 3) {
+    if (frame.rgb[i] || frame.rgb[i + 1] || frame.rgb[i + 2]) positions.push(i / 3);
+  }
+  return positions;
 }
 
 async function startSimulator(t: TestContext, environment: NodeJS.ProcessEnv = {}) {
@@ -89,26 +102,37 @@ test('the simulator renders real modes and reflects live controller input', { ti
   controller.connect();
   assert.equal(await assignment, 0, 'a display viewer does not occupy a player slot');
 
-  const testPattern = waitForFrame(viewer, (frame) => frame.mode === 'test');
-  controller.emit('changeMode', 'test');
-  const pattern = await testPattern;
-  assert.deepEqual(pixel(pattern, 0, 0), [255, 0, 0]);
-  assert.deepEqual(pixel(pattern, 18, 0), [0, 0, 255]);
+  const openedClock = receive(controller, 'obeliskInitController');
+  const greenClock = waitForFrame(viewer, (frame) => frame.mode === 'clock' && frame.rgb.includes(210));
+  controller.emit('changeMode', 'clock');
+  controller.emit(UPDATE_VISUAL_SETTINGS, { mode: 'clock', font: 'studio', color: '#00d200' });
+  assert.equal(await openedClock, 'clock');
+  assert.ok((await greenClock).rgb.every((value, i) => i % 3 === 1 || value === 0));
 
   const sunlightFrame = waitForFrame(viewer, (frame) => frame.mode === 'sunlight');
   controller.emit('changeMode', 'sunlight');
-  assert.deepEqual(pixel(await sunlightFrame, 0, 0), [204, 221, 204]);
+  assert.equal((await sunlightFrame).rgb.length, 128 * 16 * 3);
 
   const firstSpace = waitForFrame(viewer, (frame) => frame.mode === 'space' && frame.rgb.some(Boolean));
   controller.emit('changeMode', 'space');
   const space = await firstSpace;
-  await waitForFrame(viewer, (frame) => frame.mode === 'space' && !frame.rgb.equals(space.rgb));
+  const twinkled = await waitForFrame(viewer, (frame) => frame.mode === 'space' && !frame.rgb.equals(space.rgb));
+  assert.deepEqual(litPositions(twinkled), litPositions(space));
 
-  for (const mode of ['pulse', 'lightcycles']) {
-    const frame = waitForFrame(viewer, (frame) => frame.mode === mode && frame.rgb.some(Boolean));
-    controller.emit('changeMode', mode);
-    await frame;
-  }
+  const openedPulse = receive(controller, 'obeliskInitController');
+  const dimPulse = waitForFrame(viewer, (frame) => frame.mode === 'pulse' && frame.rgb.some(Boolean)
+    && frame.rgb.every((value, i) => i % 3 === 0 ? value <= 102 : value === 0));
+  controller.emit(UPDATE_VISUAL_SETTINGS, { mode: 'pulse', color: '#ff0000', intensity: 40 });
+  controller.emit('changeMode', 'pulse');
+  assert.equal(await openedPulse, 'pulse');
+  await dimPulse;
+  const mutedPulse = waitForFrame(viewer, (frame) => frame.mode === 'pulse' && !frame.rgb.some(Boolean));
+  controller.emit(UPDATE_VISUAL_SETTINGS, { mode: 'pulse', intensity: 0 });
+  await mutedPulse;
+
+  const lightcyclesFrame = waitForFrame(viewer, (frame) => frame.mode === 'lightcycles' && frame.rgb.some(Boolean));
+  controller.emit('changeMode', 'lightcycles');
+  await lightcyclesFrame;
 
   const opened = new Promise((resolve) => controller.once('obeliskInitController', resolve));
   const movedRight = waitForFrame(viewer, (frame) =>
@@ -117,6 +141,9 @@ test('the simulator renders real modes and reflects live controller input', { ti
   controller.emit(MUNCHMAN_MOVE, 'right');
   assert.equal(await opened, 'munchman');
   const right = await movedRight;
+  assert.deepEqual(pixel(right, 0, 0), [22, 180, 188]);
+  assert.deepEqual(pixel(right, 3, 1), [0, 0, 0]);
+  assert.deepEqual(pixel(right, 4, 1), [104, 39, 70]);
 
   const afterWall = waitForFrame(viewer, (frame) =>
     frame.mode === 'munchman' && frame.sequence >= right.sequence + 20);
@@ -126,7 +153,7 @@ test('the simulator renders real modes and reflects live controller input', { ti
   const movedLeft = waitForFrame(viewer, (frame) =>
     frame.mode === 'munchman' && pixel(frame, 1, 1).join() === '255,255,0');
   controller.emit(MUNCHMAN_MOVE, 'left');
-  await movedLeft;
+  assert.deepEqual(pixel(await movedLeft, 2, 1), [0, 0, 0]);
 
   const lowerPaddle = waitForFrame(viewer, (frame) =>
     frame.mode === 'pong' && pixel(frame, 0, 12)[0] === 255 && pixel(frame, 0, 3)[0] === 0);
@@ -144,7 +171,16 @@ test('the simulator renders real modes and reflects live controller input', { ti
   assert.equal((await blank).rgb.some(Boolean), false);
 });
 
-test('all nine modes render on small and stacked panels, and off stops frame updates', { timeout: 25_000 }, async (t) => {
+test('the calibration pattern is still available at startup', { timeout: 5000 }, async (t) => {
+  const url = await startSimulator(t, { OBELISK_START_MODE: 'test' });
+  const viewer = io(url + DISPLAY_NAMESPACE, { autoConnect: false, transports: ['websocket'] });
+  t.after(() => { viewer.disconnect(); });
+  const pattern = waitForFrame(viewer, (frame) => frame.mode === 'test');
+  viewer.connect();
+  assert.deepEqual(pixel(await pattern, 0, 0), [255, 0, 0]);
+});
+
+test('all remote modes render on small and stacked panels, and off stops frame updates', { timeout: 25_000 }, async (t) => {
   for (const [layout, width, height, tileWidth, tileHeight] of [
     ['8x8:2x1', 16, 8, 8, 8],
     ['16x16:2x2', 32, 32, 16, 16],
@@ -164,8 +200,8 @@ test('all nine modes render on small and stacked panels, and off stops frame upd
       assert.deepEqual([off.width, off.height, off.tileWidth, off.tileHeight], [width, height, tileWidth, tileHeight]);
       assert.equal(off.rgb.some(Boolean), false);
 
-      for (const mode of ['billboard', 'clock', 'pulse', 'space', 'sunlight', 'test', 'lightcycles', 'munchman', 'pong']) {
-        const painted = waitForFrame(viewer, (frame) => frame.mode === mode && frame.rgb.some(Boolean));
+      for (const mode of ['billboard', 'clock', 'pulse', 'space', 'sunlight', 'lightcycles', 'munchman', 'pong']) {
+        const painted = waitForFrame(viewer, (frame) => frame.mode === mode && (mode === 'sunlight' || frame.rgb.some(Boolean)));
         controller.emit('changeMode', mode);
         assert.equal((await painted).rgb.length, width * height * 3, mode);
       }

@@ -1,10 +1,11 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { MUNCHMAN_CONTROLLER_PATH } from '../../../shared/munchman';
+import { controllerPaths } from '../../../shared/modes';
 import './App.css';
 import Controller from './components/Controller';
 import InfoBar from './components/InfoBar';
 import ModeSelector from './components/ModeSelector';
 import MunchmanController from './components/MunchmanController';
+import VisualController from './components/VisualController';
 import PanelDisplay from './display/PanelDisplay';
 import { ConnectProvider } from './providers/ConnectionContext';
 
@@ -15,8 +16,10 @@ function ControllerApp() {
         <InfoBar />
         <Routes>
           <Route path="/" element={<ModeSelector />} />
-          <Route path="/controller" element={<Controller />} />
-          <Route path={MUNCHMAN_CONTROLLER_PATH} element={<MunchmanController />} />
+          <Route path={controllerPaths.pong} element={<Controller />} />
+          <Route path={controllerPaths.munchman} element={<MunchmanController />} />
+          <Route path={controllerPaths.pulse} element={<VisualController mode="pulse" />} />
+          <Route path={controllerPaths.clock} element={<VisualController mode="clock" />} />
         </Routes>
       </main>
     </ConnectProvider>

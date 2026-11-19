@@ -14,8 +14,9 @@ export function drawFittedText(
   labels: readonly string[],
   { width, height, x = 0, y = 0 }: TextBox,
   color: number,
+  candidates: readonly string[] = fontNames,
 ) {
-  for (const name of fontNames) {
+  for (const name of candidates) {
     const font = loadFont(name);
     if (font.height() > height) continue;
 

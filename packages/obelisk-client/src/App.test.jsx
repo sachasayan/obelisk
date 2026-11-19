@@ -5,7 +5,10 @@ import { afterEach, expect, test, vi } from 'vitest';
 import App from './App';
 
 vi.mock('socket.io-client', () => ({ io: vi.fn() }));
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.history.replaceState({}, '', '/');
+});
 
 test('selects Pong after assignment and keeps the connection when navigating home', () => {
   const socket = Object.assign(new EventEmitter(), {
@@ -21,7 +24,7 @@ test('selects Pong after assignment and keeps the connection when navigating hom
   expect(screen.queryByRole('link', { name: /open virtual panel/i })).not.toBeInTheDocument();
   const visuals = screen.getByRole('region', { name: 'Visuals' });
   const games = screen.getByRole('region', { name: 'Games' });
-  expect(within(visuals).getAllByRole('button')).toHaveLength(6);
+  expect(within(visuals).getAllByRole('button')).toHaveLength(5);
   expect(within(games).getAllByRole('button')).toHaveLength(3);
   const pong = within(games).getByRole('button', { name: 'Pong' });
   expect(pong).toBeDisabled();
@@ -45,6 +48,34 @@ test('selects Pong after assignment and keeps the connection when navigating hom
   unmount();
   expect(socket.listenerCount('obeliskAssignUser')).toBe(0);
   expect(socket.disconnect).toHaveBeenCalledTimes(1);
+});
+
+test('Pulse and Clock open dedicated controls from the mode catalog', () => {
+  const socket = Object.assign(new EventEmitter(), { connected: true, connect: vi.fn(), disconnect: vi.fn() });
+  vi.mocked(io).mockReturnValue(socket);
+  const send = vi.spyOn(socket, 'emit');
+  render(<App />);
+  act(() => socket.emit('obeliskAssignUser', 0));
+
+  fireEvent.click(screen.getByRole('button', { name: 'Pulse' }));
+  expect(send).toHaveBeenCalledWith('changeMode', 'pulse');
+  act(() => socket.emit('obeliskInitController', 'pulse'));
+  expect(window.location.pathname).toBe('/controller/pulse');
+  fireEvent.change(screen.getByRole('slider', { name: 'Intensity' }), { target: { value: '48' } });
+  expect(send).toHaveBeenCalledWith('visual:updateSettings', { mode: 'pulse', intensity: 48 });
+  fireEvent.click(screen.getByRole('button', { name: 'Rose' }));
+  expect(send).toHaveBeenCalledWith('visual:updateSettings', { mode: 'pulse', color: '#ff699c' });
+
+  fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Clock' }));
+  expect(send).toHaveBeenCalledWith('changeMode', 'clock');
+  act(() => socket.emit('obeliskInitController', 'clock'));
+  expect(window.location.pathname).toBe('/controller/clock');
+  fireEvent.change(screen.getByRole('combobox', { name: 'Font' }), { target: { value: 'studio' } });
+  expect(send).toHaveBeenCalledWith('visual:updateSettings', { mode: 'clock', font: 'studio' });
+  fireEvent.click(screen.getByRole('button', { name: 'Mint' }));
+  expect(send).toHaveBeenCalledWith('visual:updateSettings', { mode: 'clock', color: '#56ebba' });
+  fireEvent.click(screen.getByRole('link', { name: 'Home' }));
 });
 
 test('Munchman opens its browser controls and sends keyboard and directional input', () => {

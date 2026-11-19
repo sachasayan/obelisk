@@ -1,6 +1,6 @@
 import {
   ACESFilmicToneMapping, BoxGeometry, DataTexture, EquirectangularReflectionMapping, FogExp2, Group,
-  Mesh, MeshStandardMaterial, PCFShadowMap, PerspectiveCamera, PlaneGeometry, RGBAFormat, Scene,
+  Mesh, MeshStandardMaterial, PCFShadowMap, PerspectiveCamera, PlaneGeometry, Ray, RGBAFormat, Scene,
   ShaderMaterial, SRGBColorSpace, Vector2, WebGLRenderer,
 } from 'three';
 import type { WebGLRenderTarget } from 'three';
@@ -15,6 +15,7 @@ import type { PanelGeometry } from '../../../../shared/panel';
 import { writeRgba } from './frame';
 import type { DisplayFrame } from './frame';
 import { createPanelRoom, hazeLayer } from './panel-room';
+import { constrainRoomOrbit } from './room-camera';
 
 class RoomOcclusionPass extends GTAOPass {
   override render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, dt: number, maskActive: boolean) {
@@ -74,7 +75,8 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
   container.append(renderer.domElement);
 
   const scene = new Scene();
-  const camera = new PerspectiveCamera(47, 1, .35, Math.max(2000, Math.max(width, height) * 12));
+  const normalFov = 58;
+  const camera = new PerspectiveCamera(normalFov, 1, .35, Math.max(2000, Math.max(width, height) * 12));
   camera.layers.enable(hazeLayer);
   const room = createPanelRoom({ width, height, tileWidth, tileHeight }, renderer, requestRender);
   scene.background = room.background;
@@ -96,9 +98,9 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
     composer.addPass(output);
   }
   const controls = new OrbitControls(camera, renderer.domElement);
+  const orbitRay = new Ray();
   controls.enablePan = false;
-  controls.minDistance = Math.max(height * 1.6, width * 0.24);
-  controls.maxDistance = Math.max(width, height) * 12;
+  controls.minDistance = Math.max(height * 1.15, width * .22);
   controls.minAzimuthAngle = -Math.PI / 2.5;
   controls.maxAzimuthAngle = Math.PI / 2.5;
   controls.minPolarAngle = Math.PI * .29;
@@ -167,38 +169,35 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
     });
   }
 
-  function fitDistance(aspect: number) {
-    const fov = camera.fov * Math.PI / 180;
-    return Math.max(
-      width / (1.36 * Math.tan(fov / 2) * aspect),
-      (height + room.scale * 134) / (1.42 * Math.tan(fov / 2)),
-    );
+  function onOrbit() {
+    if (constrainRoomOrbit(camera.position, controls.target, room.cameraBounds, orbitRay)) {
+      camera.lookAt(controls.target);
+    }
+    requestRender();
   }
 
   function setView(front: boolean) {
-    const distance = fitDistance(camera.aspect);
-    const y = front ? 0 : -room.scale * 6;
-    controls.target.set(0, y, 0);
-    camera.position.set(
-      front ? 0 : -Math.min(distance * .22, room.scale * 73),
-      front ? y : y + Math.min(distance * .10, room.scale * 26),
-      distance,
-    );
+    const { scale, cameraBounds } = room;
+    const targetZ = cameraBounds.min.z + 6 * scale;
+    controls.target.set(front ? 0 : 12 * scale, front ? 0 : -20 * scale, targetZ);
+    if (front) {
+      const halfFrustum = Math.tan(camera.fov * Math.PI / 360);
+      const distance = Math.max(95 * scale, Math.max(width / camera.aspect, height) / (1.55 * halfFrustum));
+      camera.position.set(0, 0, distance);
+    } else {
+      camera.position.set(-52 * scale, 26 * scale, targetZ + 232 * scale);
+    }
     controls.update();
-    requestRender();
+    onOrbit();
   }
 
   function resize() {
     const w = Math.max(1, container.clientWidth);
     const h = Math.max(1, container.clientHeight);
-    const nextAspect = w / h;
-    const scale = fitDistance(nextAspect) / fitDistance(camera.aspect);
-    camera.aspect = nextAspect;
+    camera.aspect = w / h;
+    const portraitFov = 360 / Math.PI * Math.atan(Math.tan(normalFov * Math.PI / 360) * .9 / camera.aspect);
+    camera.fov = Math.min(82, Math.max(normalFov, portraitFov));
     camera.updateProjectionMatrix();
-    if (camera.position.lengthSq() && Number.isFinite(scale) && scale !== 1) {
-      camera.position.sub(controls.target).multiplyScalar(scale).add(controls.target);
-      controls.update();
-    }
     renderer.setSize(w, h, false);
     composer?.setSize(w, h);
     occlusion?.setSize(Math.max(1, Math.round(w * pixelRatio * .57)), Math.max(1, Math.round(h * pixelRatio * .57)));
@@ -210,7 +209,7 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
     requestRender();
   });
   observer.observe(container);
-  controls.addEventListener('change', requestRender);
+  controls.addEventListener('change', onOrbit);
   setView(false);
 
   return {

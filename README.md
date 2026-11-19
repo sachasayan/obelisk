@@ -91,11 +91,17 @@ with carpet, a furnished seating area, and studio lighting. See the
 Use **Visuals** or **Games** in the docked remote to switch modes, or choose
 **Turn display off** to stop the current mode. Drag the divider to resize the remote on a wider screen.
 Use **Remote** to collapse or reopen the dock. The dock loads the same remote served at `/` and occupies a
-player slot. The 2D view can show the individual pixel grid. In 3D, drag to orbit, scroll or pinch to zoom,
-and use **Front view** to see the panel head-on. Select **Munchman** in the
+player slot. The 2D view can show the individual pixel grid. In 3D, drag to orbit or zoom inside the
+20 × 16 ft room. Use **Front view** to see the panel head-on. Select **Munchman** in the
 remote to open its directional pad. Hold or slide across its arms to steer, or use the arrow keys or WASD. The keyboard
 also works with focus on the simulator preview. The first input takes over from
 demo movement. WASD also works in the server terminal when it is interactive.
+
+**Pulse** has its own color and intensity controls, and **Clock** offers three bitmap font families and
+a color picker. Their settings are shared across connected remotes for the current server run.
+**Sunlight** stays dark by day, animates from sunset colors into midnight blue, then turns off at midnight.
+It uses Toronto by default. Set `OBELISK_SUNLIGHT_LATITUDE`, `OBELISK_SUNLIGHT_LONGITUDE`, and
+`OBELISK_SUNLIGHT_TIME_ZONE` (an IANA time zone such as `America/Vancouver`) to match your installation.
 
 If another server is using the default port, run
 `PORT=3002 npm run simulate` and open <http://127.0.0.1:3002/display>.
@@ -129,6 +135,7 @@ same hardware peripheral.
    starting brightness.
 3. Run `npm run clientbuild`, then `npm run obelisk`. The server starts on Clock
    when the panel is enabled. Use `OBELISK_START_MODE=off npm run obelisk` to start it blank.
+   Use `OBELISK_START_MODE=test npm run obelisk` to start with the calibration pattern.
 
 The server listens on `127.0.0.1:3001` by default. To use a phone on your local
 network, run `HOST=0.0.0.0 npm run obelisk` and open the Pi's IP address on port

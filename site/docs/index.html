@@ -60,7 +60,8 @@ npm run obelisk</code></pre></div>
         <section id="controls">
           <h2>Use the remote</h2>
           <ul>
-            <li><strong>Visuals</strong> opens Clock, Billboard, Pulse, Space, Sunlight, and Test. Only the active mode runs.</li>
+            <li><strong>Visuals</strong> includes Clock, Billboard, Pulse, Space, and Sunlight. Only the active mode runs.</li>
+            <li><strong>Pulse</strong> lets you pick a color and adjust intensity. <strong>Clock</strong> offers three font styles and a color picker.</li>
             <li><strong>Munchman</strong> opens a four-way pad. Hold an arm to repeat it, or drag between arms without lifting your finger. The center is neutral. Arrow keys and WASD also steer.</li>
             <li><strong>Pong</strong> opens a vertical drag surface for a paddle. Lightcycles plays an automatic round.</li>
             <li><strong>Turn display off</strong> stops the mode and blanks the panel. Set <code>OBELISK_START_MODE=off</code> to start blank.</li>
@@ -72,7 +73,7 @@ npm run obelisk</code></pre></div>
             <li><strong>Port already in use.</strong> Use <code>PORT=3002 npm run simulate</code>, then open <code>http://127.0.0.1:3002/display</code>.</li>
             <li><strong>3D unavailable.</strong> Enable WebGL in your browser or use the 2D view. Both receive the same live pixel frame.</li>
             <li><strong>Phone cannot connect.</strong> Check it is on the same trusted network, the server is listening on a LAN interface, and you used the Pi’s local address and port.</li>
-            <li><strong>Panel shows the wrong pattern.</strong> Start with Test and verify dimensions, scan options, chain order, and brightness against your panel model.</li>
+            <li><strong>Panel shows the wrong pattern.</strong> Run <code>OBELISK_START_MODE=test npm run obelisk</code> to check dimensions, scan options, chain order, and brightness against your panel model.</li>
           </ul>
           <p>See the <a href="https://github.com/sachasayan/obelisk/tree/maintenance/modernize">repository README and source</a> for configuration and development details.</p>
         </section>
