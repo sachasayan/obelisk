@@ -1,49 +1,51 @@
 import { useContext } from 'react';
-import Button from '@mui/material/Button';
-import Paper from '@mui/material/Paper';
 import { ConnectionContext } from '../providers/ConnectionContext';
 import './ModeSelector.css';
 
-const modes = [
-  'billboard',
-  'clock',
-  'lightcycles',
-  'munchman',
-  'pong',
-  'pulse',
-  'space',
-  'sunlight',
-  'test',
-  'exit',
-];
+const posters = [
+  ['billboard', 'Billboard'],
+  ['clock', 'Clock'],
+  ['lightcycles', 'Lightcycles'],
+  ['munchman', 'Munchman'],
+  ['pong', 'Pong'],
+  ['pulse', 'Pulse'],
+  ['space', 'Space'],
+  ['sunlight', 'Sunlight'],
+  ['test', 'Test'],
+] as const;
 
-function ModeSelector() {
+export default function ModeSelector() {
   const connection = useContext(ConnectionContext);
+  const disabled = !connection || connection.user < 0;
+
+  function select(mode: string) {
+    if (connection?.socket.connected) connection.socket.emit('changeMode', mode);
+  }
 
   return (
-    <div className="ModeSelector">
-      {modes.map((mode) => (
-        <Paper
-          className="Paper"
-          key={mode}
-          elevation={3}
-          style={mode === 'clock' || mode === 'exit' ? undefined : { backgroundImage: `url(/modes/${mode}.jpg)` }}
-        >
-          <Button
-            className="Button"
-            variant="contained"
-            color="primary"
-            disabled={!connection || connection.user < 0}
-            onClick={() => {
-              if (connection?.socket.connected) connection.socket.emit('changeMode', mode);
-            }}
+    <section className="ModeSelector" aria-label="Display modes">
+      <div className="ModeSelector-grid">
+        {posters.map(([mode, title]) => (
+          <button
+            type="button"
+            className="ModePoster"
+            key={mode}
+            disabled={disabled}
+            onClick={() => select(mode)}
           >
-            {mode}
-          </Button>
-        </Paper>
-      ))}
-    </div>
+            <img src={`/posters/${mode}.webp`} alt="" decoding="async" />
+            <span>{title}</span>
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        className="ModeSelector-exit"
+        disabled={disabled}
+        onClick={() => select('exit')}
+      >
+        Exit
+      </button>
+    </section>
   );
 }
-
-export default ModeSelector;

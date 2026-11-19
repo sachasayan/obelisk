@@ -18,7 +18,7 @@ test('selects Pong after assignment and keeps the connection when navigating hom
   const { unmount } = render(<App />);
 
   expect(screen.queryByRole('link', { name: /open virtual panel/i })).not.toBeInTheDocument();
-  const pong = screen.getByRole('button', { name: 'pong' });
+  const pong = screen.getByRole('button', { name: 'Pong' });
   expect(pong).toBeDisabled();
   act(() => socket.emit('obeliskAssignUser', 0));
   expect(pong).toBeEnabled();
@@ -29,11 +29,11 @@ test('selects Pong after assignment and keeps the connection when navigating hom
   expect(screen.getByLabelText('Pong touch controller')).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('link', { name: 'Home' }));
-  expect(screen.getByRole('button', { name: 'pong' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Pong' })).toBeEnabled();
   expect(socket.connect).toHaveBeenCalledTimes(1);
 
   act(() => socket.emit('disconnect'));
-  expect(screen.getByRole('button', { name: 'pong' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Pong' })).toBeDisabled();
 
   unmount();
   expect(socket.listenerCount('obeliskAssignUser')).toBe(0);
@@ -51,7 +51,7 @@ test('Munchman opens its browser controls and sends keyboard and directional inp
   render(<App />);
 
   act(() => socket.emit('obeliskAssignUser', 0));
-  fireEvent.click(screen.getByRole('button', { name: 'munchman' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Munchman' }));
   expect(send).toHaveBeenCalledWith('changeMode', 'munchman');
   act(() => socket.emit('obeliskInitController', 'munchman'));
 
@@ -64,7 +64,7 @@ test('Munchman opens its browser controls and sends keyboard and directional inp
   expect(send).toHaveBeenCalledWith('munchman:move', 'down');
 
   fireEvent.click(screen.getByRole('link', { name: 'Home' }));
-  expect(screen.getByRole('button', { name: 'munchman' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Munchman' })).toBeEnabled();
   expect(socket.connect).toHaveBeenCalledTimes(1);
 });
 

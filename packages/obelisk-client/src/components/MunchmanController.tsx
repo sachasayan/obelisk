@@ -1,6 +1,5 @@
 import { useContext, useEffect, useEffectEvent, useRef } from 'react';
 import type { PointerEvent } from 'react';
-import Button from '@mui/material/Button';
 import { Link } from 'react-router-dom';
 import { isMunchmanDirection, MUNCHMAN_MOVE } from '../../../../shared/munchman';
 import type { MunchmanDirection } from '../../../../shared/munchman';
@@ -69,8 +68,8 @@ export default function MunchmanController() {
   }, []);
 
   return (
-    <section aria-labelledby="munchman-title" className="MunchmanController">
-      <h1 id="munchman-title">Munchman</h1>
+    <section aria-labelledby="munchman-title" className="Remote-control">
+      <h2 id="munchman-title">Munchman</h2>
       <p>Use the arrow keys, WASD, or the directional pad.</p>
       <div className="MunchmanController-pad" role="group" aria-label="Munchman directional pad">
         {buttons.map(({ direction, arrow, shortcuts }) => (
@@ -93,7 +92,7 @@ export default function MunchmanController() {
           </button>
         ))}
       </div>
-      <Button className="close" component={Link} to="/">Home</Button>
+      <Link className="Remote-home" to="/">Home</Link>
     </section>
   );
 }

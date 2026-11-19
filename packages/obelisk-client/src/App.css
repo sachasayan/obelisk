@@ -1,3 +1,92 @@
 .App {
+  --remote-focus: #70e4d0;
+  box-sizing: border-box;
+  width: min(100%, 32rem);
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: clamp(.52rem, 2.5vw, .9rem) clamp(.52rem, 2.3vw, .85rem) .5rem;
+  color: #f8f8fb;
+  background: #05050a;
+}
+
+.Remote-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .55rem;
+  margin: 0 0 clamp(.65rem, 2.6vw, .95rem);
+  padding-inline: .23rem;
+}
+
+.Remote-header h1 {
+  margin: 0;
+  font-size: clamp(1.55rem, 8vw, 2.55rem);
+  font-weight: 780;
+  line-height: .98;
+  letter-spacing: -.055em;
+}
+
+.Remote-player {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  color: #b7b7c4;
+  font-size: clamp(.73rem, 3.4vw, .98rem);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.Remote-player-dot {
+  width: .49rem;
+  height: .49rem;
+  border-radius: 50%;
+  background: #978eab;
+}
+
+.Remote-player-dot.is-connected {
+  background: #00e8af;
+  box-shadow: 0 0 .6rem #00e8af47;
+}
+
+.App :focus-visible {
+  outline: 2px solid var(--remote-focus);
+  outline-offset: 2px;
+}
+
+.Remote-control {
+  max-width: 24rem;
+  margin: 1.35rem auto;
   text-align: center;
 }
+
+.Remote-control h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 730;
+  letter-spacing: -.025em;
+}
+
+.Remote-control p {
+  margin: .45rem 0 1rem;
+  color: #b7b7c4;
+  font-size: .83rem;
+  line-height: 1.4;
+}
+
+.Remote-home {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-width: 5.2rem;
+  min-height: 2.75rem;
+  padding: .45rem .72rem;
+  border: 1px solid #343344;
+  border-radius: .5rem;
+  background: #16151f;
+  color: #f8f8fb;
+  font-size: .85rem;
+  font-weight: 625;
+  text-decoration: none;
+}
+
+.Remote-home:hover { background: #212031; }

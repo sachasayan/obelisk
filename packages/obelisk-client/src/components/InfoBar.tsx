@@ -1,25 +1,16 @@
 import { useContext } from 'react';
-import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
-import ViewWeekIcon from '@mui/icons-material/ViewWeek';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
 import { ConnectionContext } from '../providers/ConnectionContext';
 
-function InfoBar() {
+export default function InfoBar() {
   const user = useContext(ConnectionContext)?.user ?? -1;
 
   return (
-    <AppBar position="static">
-      <Toolbar sx={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr' }}>
-        <ViewWeekIcon sx={{ gridColumn: 2 }} />
-        <Typography variant="h6" color="inherit" sx={{ justifySelf: 'end' }}>
-          <SportsEsportsIcon />
-          {user >= 0 ? user + 1 : ''}
-        </Typography>
-      </Toolbar>
-    </AppBar>
+    <header className="Remote-header">
+      <h1>Obelisk</h1>
+      <div className="Remote-player" role="status">
+        <span className={user >= 0 ? 'Remote-player-dot is-connected' : 'Remote-player-dot'} aria-hidden="true" />
+        {user >= 0 ? `Player ${user + 1}` : 'Connecting…'}
+      </div>
+    </header>
   );
 }
-
-export default InfoBar;

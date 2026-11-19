@@ -1,7 +1,5 @@
 import { useContext, useRef } from 'react';
 import type { PointerEvent } from 'react';
-import Button from '@mui/material/Button';
-import Paper from '@mui/material/Paper';
 import { Link } from 'react-router-dom';
 import { ConnectionContext } from '../providers/ConnectionContext';
 import './Controller.css';
@@ -23,6 +21,9 @@ function Controller() {
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.beginPath();
       context.arc(x * canvas.width, y * canvas.height, 10, 0, 2 * Math.PI);
+      context.strokeStyle = '#f8fffe';
+      context.lineWidth = 2;
+      context.fillStyle = '#6be6df';
       context.stroke();
       context.fill();
     }
@@ -57,22 +58,22 @@ function Controller() {
   }
 
   return (
-    <>
-      <Paper className="Controller-Paper" elevation={3}>
-        <canvas
-          aria-label="Pong touch controller"
-          width={300}
-          height={300}
-          onPointerDown={start}
-          onPointerMove={drag}
-          onPointerUp={stop}
-          onPointerCancel={stop}
-          onLostPointerCapture={stop}
-        />
-      </Paper>
-      <div style={{ color: 'white', margin: '10px' }}>Psst.. Touch me to control me. ✌️</div>
-      <Button className="close" component={Link} to="/">Home</Button>
-    </>
+    <section className="Remote-control" aria-labelledby="pong-title">
+      <h2 id="pong-title">Pong</h2>
+      <p>Drag on the pad to move your paddle.</p>
+      <canvas
+        className="Controller-pad"
+        aria-label="Pong touch controller"
+        width={300}
+        height={300}
+        onPointerDown={start}
+        onPointerMove={drag}
+        onPointerUp={stop}
+        onPointerCancel={stop}
+        onLostPointerCapture={stop}
+      />
+      <Link className="Remote-home" to="/">Home</Link>
+    </section>
   );
 }
 

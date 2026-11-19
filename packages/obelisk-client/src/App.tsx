@@ -11,16 +11,14 @@ import { ConnectProvider } from './providers/ConnectionContext';
 function ControllerApp() {
   return (
     <ConnectProvider>
-      <div className="App">
-        <header className="App-header">
-          <InfoBar />
-        </header>
+      <main className="App">
+        <InfoBar />
         <Routes>
           <Route path="/" element={<ModeSelector />} />
           <Route path="/controller" element={<Controller />} />
           <Route path={MUNCHMAN_CONTROLLER_PATH} element={<MunchmanController />} />
         </Routes>
-      </div>
+      </main>
     </ConnectProvider>
   );
 }
