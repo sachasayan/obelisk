@@ -19,11 +19,22 @@
 }
 
 .Remote-header h1 {
+  display: flex;
+  align-items: center;
+  gap: .1em;
   margin: 0;
-  font-size: clamp(1.55rem, 8vw, 2.55rem);
-  font-weight: 780;
-  line-height: .98;
-  letter-spacing: -.055em;
+  font-size: clamp(1.75rem, 9vw, 2.85rem);
+}
+
+.Remote-logo-mark {
+  width: auto;
+  height: 1em;
+}
+
+.Remote-logo-wordmark {
+  width: auto;
+  height: .628em;
+  transform: translateY(.056em);
 }
 
 .Remote-player {

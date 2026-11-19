@@ -38,7 +38,11 @@
 
 .panel-identity { gap: .6rem; }
 
-.panel-identity svg { color: var(--panel-accent); }
+.panel-identity img {
+  flex: none;
+  width: auto;
+  height: 1.125rem;
+}
 
 .panel-header h1, .panel-remote-title h2 {
   margin: 0;

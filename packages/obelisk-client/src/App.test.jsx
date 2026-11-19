@@ -17,6 +17,7 @@ test('selects Pong after assignment and keeps the connection when navigating hom
   const send = vi.spyOn(socket, 'emit');
   const { unmount } = render(<App />);
 
+  expect(screen.getByRole('heading', { name: 'Obelisk', level: 1 })).toBeInTheDocument();
   expect(screen.queryByRole('link', { name: /open virtual panel/i })).not.toBeInTheDocument();
   const pong = screen.getByRole('button', { name: 'Pong' });
   expect(pong).toBeDisabled();

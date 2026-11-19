@@ -7,7 +7,6 @@ import GridOnOutlinedIcon from '@mui/icons-material/GridOnOutlined';
 import SettingsRemoteOutlinedIcon from '@mui/icons-material/SettingsRemoteOutlined';
 import ViewInArOutlinedIcon from '@mui/icons-material/ViewInArOutlined';
 import ViewSidebarOutlinedIcon from '@mui/icons-material/ViewSidebarOutlined';
-import ViewWeekOutlinedIcon from '@mui/icons-material/ViewWeekOutlined';
 import { io } from 'socket.io-client';
 import { MUNCHMAN_CONTROLLER_PATH, MUNCHMAN_MOVE } from '../../../../shared/munchman';
 import { munchmanDirectionForKey } from '../components/munchman-input';
@@ -145,7 +144,7 @@ export default function PanelDisplay() {
     <main className={`panel-app${resizing ? ' panel-app--resizing' : ''}`} style={layout}>
       <header className="panel-header">
         <div className="panel-identity">
-          <ViewWeekOutlinedIcon aria-hidden="true" />
+          <img src="/brand/keystone-mark.svg" alt="" width={197} height={336} />
           <h1>Obelisk Simulator</h1>
         </div>
         <button
