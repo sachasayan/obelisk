@@ -8,6 +8,7 @@ import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
 import { GAME_INPUT, GAME_JOIN, GAME_STATUS, games } from '../../../shared/games';
 import type { GameStatus } from '../../../shared/games';
+import { fleetMode } from '../../../shared/fleet-strike';
 import { MINUTES_PER_DAY, SIMULATOR_SETTINGS, UPDATE_SIMULATOR_SETTINGS } from '../../../shared/simulator';
 import type { SimulatorSettings } from '../../../shared/simulator';
 import { DISPLAY_FRAME, DISPLAY_NAMESPACE } from '../../../shared/panel';
@@ -297,7 +298,7 @@ function waitForGame(socket: Socket, predicate: (value: GameStatus) => boolean) 
   });
 }
 
-test('two remotes join one round and playing a game updates the panel', { timeout: 12_000 }, async (t) => {
+test('two remotes join one Stack Duel round and playing updates the panel', { timeout: 12_000 }, async (t) => {
   const url = await startSimulator(t);
   const viewer = io(url + DISPLAY_NAMESPACE, { autoConnect: false, transports: ['websocket'] });
   const first = io(url, { autoConnect: false, transports: ['websocket'] });
@@ -309,26 +310,83 @@ test('two remotes join one round and playing a game updates the panel', { timeou
   second.connect();
   await Promise.all(assigned);
 
-  for (const mode of ['deep-scan', 'stack-duel', 'signal-run', 'echo-keys'] as const) {
-    const modeFrame = waitForFrame(viewer, (frame) => frame.mode === mode);
-    const primary = waitForGame(first, (status) => status.mode === mode && status.seat === 0);
-    first.emit('changeMode', mode);
-    first.emit(GAME_JOIN, mode);
-    await primary;
-    await modeFrame;
+  const mode = 'stack-duel';
+  const modeFrame = waitForFrame(viewer, (frame) => frame.mode === mode);
+  const primary = waitForGame(first, (status) => status.mode === mode && status.seat === 0);
+  first.emit('changeMode', mode);
+  first.emit(GAME_JOIN, mode);
+  await primary;
+  await modeFrame;
 
-    if (games[mode].players === 2) {
-      const joined = waitForGame(second, (status) => status.mode === mode && status.seat === 1 && status.players === 2);
-      second.emit('changeMode', mode);
-      second.emit(GAME_JOIN, mode);
-      await joined;
-    }
+  const joined = waitForGame(second, (status) => status.mode === mode && status.seat === 1 && status.players === 2);
+  second.emit('changeMode', mode);
+  second.emit(GAME_JOIN, mode);
+  await joined;
 
-    const latestPaint = waitForFrame(viewer, (frame) => frame.mode === mode && frame.rgb.some(Boolean));
-    first.emit(GAME_INPUT, { mode, action: 'restart' });
-    const before = await latestPaint;
-    const modified = waitForFrame(viewer, (frame) => frame.mode === mode && !frame.rgb.equals(before.rgb));
-    first.emit(GAME_INPUT, { mode, action: mode === 'signal-run' ? 'up' : 'action' });
-    await modified;
-  }
+  const latestPaint = waitForFrame(viewer, (frame) => frame.mode === mode && frame.rgb.some(Boolean));
+  first.emit(GAME_INPUT, { mode, action: 'restart' });
+  const before = await latestPaint;
+  const modified = waitForFrame(viewer, (frame) => frame.mode === mode && !frame.rgb.equals(before.rgb));
+  first.emit(GAME_INPUT, { mode, action: 'action' });
+  await modified;
+});
+
+test('Fleet Strike keeps fleet grids private and animates a hit before passing the turn', { timeout: 10_000 }, async (t) => {
+  const url = await startSimulator(t);
+  const viewer = io(url + DISPLAY_NAMESPACE, { autoConnect: false, transports: ['websocket'] });
+  const [first, second, spectator] = Array.from({ length: 3 }, () => io(url, { autoConnect: false, transports: ['websocket'] }));
+  t.after(() => { for (const socket of [viewer, first, second, spectator]) socket.disconnect(); });
+  const viewing = waitForFrame(viewer, (frame) => frame.mode === 'clock');
+  viewer.connect();
+  const assignments = [first, second, spectator].map((socket) => {
+    const assigned = receive(socket, 'obeliskAssignUser');
+    socket.connect();
+    return assigned;
+  });
+  await Promise.all([viewing, ...assignments]);
+
+  const setup = waitForFrame(viewer, (frame) => frame.mode === fleetMode);
+  const firstBoard = waitForGame(first, (status) => status.mode === fleetMode && status.seat === 0);
+  first.emit('changeMode', fleetMode);
+  first.emit(GAME_JOIN, fleetMode);
+  assert.equal((await firstBoard).fleet?.board.filter((cell) => cell === 'ship').length, 7);
+  await setup;
+
+  const secondBoard = waitForGame(second, (status) => status.seat === 1);
+  second.emit('changeMode', fleetMode);
+  second.emit(GAME_JOIN, fleetMode);
+  const defender = (await secondBoard).fleet!;
+  const target = defender.board.indexOf('ship');
+  assert.ok(target >= 0);
+  assert.ok(defender.targets.every((cell) => cell === 'water'));
+
+  const publicStatus = waitForGame(spectator, (status) => status.mode === fleetMode);
+  spectator.emit(GAME_JOIN, fleetMode);
+  assert.equal((await publicStatus).fleet, undefined);
+
+  const aiming = waitForGame(first, (status) => status.fleet?.phase === 'aim');
+  const ready = { mode: fleetMode, action: { type: 'ready', ready: true } };
+  first.emit(GAME_INPUT, ready);
+  second.emit(GAME_INPUT, ready);
+  const before = (await aiming).fleet!;
+  assert.equal(before.turn, 0);
+  assert.equal(before.targets[target], 'water');
+  assert.deepEqual(before.ships, (await firstBoard).fleet!.ships);
+
+  const fired = waitForGame(first, (status) => status.fleet?.phase === 'firing');
+  const shooterHit = waitForGame(first, (status) => status.fleet?.lastShot?.result === 'hit');
+  const defenderHit = waitForGame(second, (status) => status.fleet?.lastShot?.result === 'hit');
+  const nextTurn = waitForGame(second, (status) => status.fleet?.phase === 'aim' && status.fleet.turn === 1);
+  const explosion = waitForFrame(viewer, (frame) => frame.mode === fleetMode
+    && pixel(frame, Math.floor(frame.width * .81), Math.floor(frame.height * .77) - 1).join(',') === '255,237,210');
+  first.emit(GAME_INPUT, { mode: fleetMode, action: { type: 'fire', cell: target } });
+  assert.equal((await fired).fleet!.targets[target], 'water');
+  assert.equal((await shooterHit).fleet!.targets[target], 'hit');
+  assert.equal((await defenderHit).fleet!.board[target], 'hit');
+  await explosion;
+  assert.equal((await nextTurn).message, 'Your turn');
+
+  const reset = waitForGame(first, (status) => status.players === 1 && status.fleet?.phase === 'setup');
+  second.disconnect();
+  assert.ok((await reset).fleet!.targets.every((cell) => cell === 'water'));
 });

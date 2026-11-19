@@ -1,6 +1,7 @@
 import { controllerPath, findMode } from '../../shared/modes';
 import type { ModeName } from '../../shared/modes';
 import { GAME_INPUT, GAME_JOIN, GAME_LEAVE, GAME_STATUS, isGameAction, isGameMode } from '../../shared/games';
+import { fleetMode, isFleetAction } from '../../shared/fleet-strike';
 import { applyVisualSettings, defaultVisualSettings, UPDATE_VISUAL_SETTINGS, VISUAL_SETTINGS } from '../../shared/visual-settings';
 import type { createGameSession } from './games/session';
 import type { PlayerData } from './panel/types';
@@ -49,12 +50,15 @@ export function createControllerHub(
       sendGameStatus(socket);
     });
 
-    socket.on(GAME_LEAVE, () => game?.leave(socket.id));
+    socket.on(GAME_LEAVE, (from: unknown) => {
+      if (from === undefined) game?.leave(socket.id);
+      else if (isGameMode(from)) game?.leave(socket.id, from);
+    });
     socket.on(GAME_INPUT, (value: unknown) => {
-      if (value && typeof value === 'object' && 'mode' in value && 'action' in value
-          && isGameMode(value.mode) && isGameAction(value.action)) {
-        game?.input(value.mode, socket.id, value.action);
-      }
+      if (!value || typeof value !== 'object' || !('mode' in value) || !('action' in value)) return;
+      const { mode, action } = value;
+      if (mode === fleetMode && isFleetAction(action)) game?.fleetInput(socket.id, action);
+      else if (isGameMode(mode) && isGameAction(action)) game?.input(mode, socket.id, action);
     });
 
     socket.on('drawing', (value: unknown) => {

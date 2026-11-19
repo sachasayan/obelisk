@@ -19,7 +19,7 @@ export default function GameController({ mode }: { mode: GameMode }) {
   }
 
   const keyInput = useEffectEvent((event: KeyboardEvent) => {
-    if (!connected || !joined || (mode === 'echo-keys' && event.repeat)) return;
+    if (!connected || !joined) return;
     const action = gameActionForKey(event);
     if (!action) return;
     event.preventDefault();
@@ -59,21 +59,17 @@ export default function GameController({ mode }: { mode: GameMode }) {
       {joined && status ? (
         <>
           <div className="Game-status">
-            {players > 1 && <div className="Game-score">
+            <div className="Game-score">
               {status.scores.map((score, seat) => (
                 <span key={seat} className={seat === status.seat ? 'is-local' : undefined}>
-                  {seat === status.seat ? 'You' : (status.players < 2 && mode === 'deep-scan' ? 'CPU' : `P${seat + 1}`)}
-                  <b>{score}{mode === 'deep-scan' ? '/4' : ''}</b>
+                  {seat === status.seat ? 'You' : `P${seat + 1}`}
+                  <b>{score}</b>
                 </span>
               ))}
-            </div>}
-            {players === 1 && <div className="Game-score">
-              <span className="is-local">{mode === 'echo-keys' ? 'Rounds' : 'Gates'} <b>{status.scores[0]}</b></span>
-            </div>}
+            </div>
             <p role="status">{status.message}</p>
           </div>
-          <DirectionalPad id="game-input" label={`${title} directional pad`} disabled={!connected}
-            repeat={mode !== 'echo-keys'} onDirection={send} />
+          <DirectionalPad id="game-input" label={`${title} directional pad`} disabled={!connected} onDirection={send} />
           <button type="button" className="Game-action" disabled={!connected} aria-keyshortcuts="Space Enter"
             onClick={() => send('action')}>{action}</button>
           <div className="Game-navigation">

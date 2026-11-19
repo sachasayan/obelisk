@@ -1,10 +1,7 @@
-import { drawFittedText } from '../panel/text-layout';
 import type { ModeState, PanelMatrix } from '../panel/types';
 
 export const seatColors = [0x49ddc6, 0xec549a];
 export const quietCell = 0x111927;
-
-export interface Point { x: number; y: number }
 
 export interface GameBoard {
   cell(x: number, y: number, color: number): void;
@@ -55,13 +52,4 @@ export function drawBoards(
       },
     }, index);
   }
-  return columns * pitchX;
-}
-
-export function gameCaption(state: ModeState, left: string, right: string, fieldWidth: number, color: number) {
-  const width = Math.floor((state.matrix.width() - fieldWidth) / 2) - 3;
-  const height = state.matrix.height();
-  if (width < 10) return;
-  drawFittedText(state, [left], { x: 2, width, height }, color, ['6x10', '4x6', 'tom-thumb']);
-  drawFittedText(state, [right], { x: state.matrix.width() - width - 2, width, height }, color, ['6x10', '4x6', 'tom-thumb']);
 }

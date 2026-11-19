@@ -1,0 +1,115 @@
+.Fleet-control {
+  --fleet-water: #09203045;
+  --fleet-edge: #7298af56;
+  --fleet-muted: #a9bec9;
+  --fleet-friend: #64e4d0;
+  --fleet-hit: #ffd387;
+  --fleet-sunk: #ffaba4;
+  display: grid;
+  gap: .7rem;
+  width: min(100%, 27rem);
+  max-width: none;
+  margin: .8rem auto;
+  text-align: left;
+}
+
+.Fleet-control h2 { color: #e8f7ff; font-size: 1.45rem; }
+.Fleet-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  min-height: 2.1rem;
+  background: linear-gradient(100deg, transparent 32%, #132934 71%, #1d3b47);
+  border-radius: .28rem;
+}
+.Fleet-heading img { width: min(35%, 8rem); max-height: 2.25rem; margin-inline-end: .35rem; object-fit: contain; }
+.Fleet-control p { margin: 0; }
+.Fleet-status, .Fleet-score, .Fleet-legend {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .35rem .8rem;
+  font-size: .8rem;
+  color: var(--fleet-muted);
+}
+.Fleet-status strong { font-size: .9rem; color: #e8f7ff; }
+.Fleet-status span { text-transform: capitalize; }
+.Fleet-score { border-block: 1px solid var(--fleet-edge); padding: .38rem 0; }
+.Fleet-score b { margin-inline-start: .35rem; color: #e8f7ff; font-variant-numeric: tabular-nums; }
+.Fleet-board { width: min(100%, 20rem); margin-inline: auto; }
+.Fleet-board h3 { font-size: .82rem; margin: 0 0 .2rem; color: #e8f7ff; }
+.Fleet-grid {
+  --fleet-gap: 3px;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: var(--fleet-gap);
+  align-items: center;
+  text-align: center;
+  font-size: .68rem;
+  color: var(--fleet-muted);
+}
+.Fleet-water {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: .25rem;
+  background: #112a36;
+  pointer-events: none;
+}
+.Fleet-vessel { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.Fleet-vessel img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(100% - .32rem);
+  height: auto;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 2px 2px #021015);
+}
+.Fleet-vessel--vertical img {
+  width: calc((100% + var(--fleet-gap)) * var(--fleet-span) - var(--fleet-gap) - .32rem);
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+.Fleet-vessel--wreck img { opacity: .52; filter: grayscale(1) brightness(.55) drop-shadow(0 2px 2px #021015); }
+.Fleet-mark { position: relative; z-index: 2; text-shadow: 0 1px 3px #070d12, 0 0 5px #070d12; }
+.Fleet-cell {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  padding: 0;
+  min-width: 0;
+  border: 1px solid var(--fleet-edge);
+  border-radius: .23rem;
+  background: var(--fleet-water);
+  color: #eef8ff;
+  font: 700 1.26rem/1 system-ui, sans-serif;
+  touch-action: manipulation;
+}
+button.Fleet-cell { cursor: pointer; }
+button.Fleet-cell:disabled { cursor: default; }
+button.Fleet-cell--water:disabled { background: #0719209c; border-color: #537e884c; }
+.Fleet-cell--ship { background: #40707a46; border-color: #74a5ad92; }
+.Fleet-cell--selected-ship { border-color: var(--fleet-friend); background: #366f78a6; }
+.Fleet-cell--miss { color: #b1d9ed; }
+.Fleet-cell--hit { color: var(--fleet-hit); background: #753c29aa; border-color: #d0864d; }
+.Fleet-cell--sunk { color: var(--fleet-sunk); background: #71333daa; border-color: #bf6872; }
+.Fleet-cell[aria-pressed='true'] { border-color: var(--fleet-friend); background: #2c757ea1; }
+.Fleet-cell[aria-pressed='true'] span::after { content: '+'; color: var(--fleet-friend); }
+.Fleet-arrange, .Fleet-tools { display: flex; flex-wrap: wrap; gap: .35rem; }
+.Fleet-arrange { justify-content: space-between; }
+.Fleet-tools .Remote-home { min-width: 2.65rem; font: inherit; font-size: .75rem; }
+.Fleet-tools .Remote-home[aria-pressed='true'] { color: var(--fleet-friend); border-color: #468b85; }
+.Fleet-tools sup { margin-left: .12rem; font-size: .65em; }
+.Fleet-control button:disabled:not(.Fleet-cell) { opacity: .55; cursor: default; }
+.Fleet-action { width: 100%; min-height: 2.75rem; }
+.Fleet-legend { justify-content: center; }
+.Fleet-legend span:nth-child(2) { color: var(--fleet-hit); }
+.Fleet-legend span:nth-child(3) { color: var(--fleet-sunk); }
+.Fleet-leave { justify-self: start; }

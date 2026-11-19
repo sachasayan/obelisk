@@ -107,9 +107,8 @@ It uses Toronto by default. Set `OBELISK_SUNLIGHT_LATITUDE`, `OBELISK_SUNLIGHT_L
 `OBELISK_SUNLIGHT_TIME_ZONE` (an IANA time zone such as `America/Vancouver`) to match your installation.
 
 **Stack Duel** is a solo or two-player falling-block game with pressure rows on multi-line clears.
-**Deep Scan** is a hidden-beacon game against a computer or another player.
-**Signal Run** is a solo gate runner, and **Echo Keys** is a solo directional memory game.
-The four games support a draggable D-pad, arrow keys, and WASD. Space or Enter uses the action button.
+**Fleet Strike** is a two-player naval duel. On two phones connected to the same Obelisk server, choose Fleet Strike, arrange three ships, and lock in. Take turns targeting untried cells on your phones. The panel animates every shot and announces hits, misses, and ships sunk.
+Stack Duel supports a draggable D-pad, arrow keys, and WASD. Space or Enter drops the piece.
 To duel, both players choose the same game from separate remotes connected to the same Obelisk.
 
 If another server is using the default port, run

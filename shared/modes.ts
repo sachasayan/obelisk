@@ -27,9 +27,7 @@ export type ModeName = (typeof modeGroups)[number]['modes'][number][0] | 'exit';
 export const controllerPaths = {
   pong: '/controller',
   'stack-duel': '/controller/stack-duel',
-  'deep-scan': '/controller/deep-scan',
-  'signal-run': '/controller/signal-run',
-  'echo-keys': '/controller/echo-keys',
+  'fleet-strike': '/controller/fleet-strike',
   pulse: '/controller/pulse',
   clock: '/controller/clock',
   'lava-lamp': '/controller/lava-lamp',

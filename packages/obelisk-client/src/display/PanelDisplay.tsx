@@ -10,6 +10,7 @@ import ViewInArOutlinedIcon from '@mui/icons-material/ViewInArOutlined';
 import ViewSidebarOutlinedIcon from '@mui/icons-material/ViewSidebarOutlined';
 import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
+import { fleetMode } from '../../../../shared/fleet-strike';
 import { GAME_INPUT, isGameMode } from '../../../../shared/games';
 import { controllerPaths, modeLabel } from '../../../../shared/modes';
 import { SIMULATOR_SETTINGS, UPDATE_SIMULATOR_SETTINGS } from '../../../../shared/simulator';
@@ -87,8 +88,7 @@ export default function PanelDisplay() {
   }, []);
 
   function forwardGameKey(event: KeyboardEvent<HTMLDivElement>) {
-    if (!isGameMode(mode) || status !== 'live' || dockTab !== 'remote' || !remoteOpen ||
-        (mode === 'echo-keys' && event.repeat)) return;
+    if (!isGameMode(mode) || mode === fleetMode || status !== 'live' || dockTab !== 'remote' || !remoteOpen) return;
     const action = gameActionForKey(event.nativeEvent);
     const remote = remoteFrame.current;
     const location = remote?.contentDocument?.location;

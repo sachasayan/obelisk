@@ -1,19 +1,14 @@
+import { fleetMode } from './fleet-strike';
+import type { FleetStatus } from './fleet-strike';
+
 export const games = {
   'stack-duel': {
     title: 'Stack Duel', players: 2, action: 'Drop',
     instructions: 'Move with left and right. Up rotates, down lowers, and Drop locks the piece. Clear multiple rows to send pressure to a rival.',
   },
-  'deep-scan': {
-    title: 'Deep Scan', players: 2, action: 'Probe',
-    instructions: 'Move the cursor and probe for four hidden beacons. A missed probe gives the distance to the nearest beacon. Find all four before your rival.',
-  },
-  'signal-run': {
-    title: 'Signal Run', players: 1, action: 'Phase',
-    instructions: 'Steer through the gaps in the incoming gates. Phase lets you pass through a gate, and every third gate restores a charge.',
-  },
-  'echo-keys': {
-    title: 'Echo Keys', players: 1, action: 'Start',
-    instructions: 'Watch the directions flash, then enter the sequence in order. A correct round adds another direction.',
+  [fleetMode]: {
+    title: 'Fleet Strike', players: 2, action: 'Fire',
+    instructions: 'Arrange three ships and lock your fleet. Take turns firing at hidden ships. The wall shows each shot.',
   },
 } as const;
 
@@ -33,6 +28,7 @@ export interface GameStatus {
   players: number;
   message: string;
   scores: number[];
+  fleet?: FleetStatus;
 }
 
 export function isGameMode(value: unknown): value is GameMode {

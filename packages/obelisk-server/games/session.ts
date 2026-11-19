@@ -1,21 +1,20 @@
+import { fleetMode } from '../../../shared/fleet-strike';
+import type { FleetAction } from '../../../shared/fleet-strike';
 import { games } from '../../../shared/games';
 import type { GameAction, GameMode, GameStatus } from '../../../shared/games';
 import type { ModeState } from '../panel/types';
-import { deepScan } from './deep-scan';
-import { echoKeys } from './echo-keys';
-import { signalRun } from './signal-run';
+import { fleetStrike } from './fleet-strike';
 import { stackDuel } from './stack-duel';
-import type { GameContext, GameRound } from './types';
+import type { FleetRound, GameContext, GameRound } from './types';
 
 const rounds = {
-  'stack-duel': stackDuel, 'deep-scan': deepScan,
-  'signal-run': signalRun, 'echo-keys': echoKeys,
+  'stack-duel': stackDuel, [fleetMode]: fleetStrike,
 };
 
 export function createGameSession(onChange: () => void) {
   const seats: (string | null)[] = [];
   let mode: GameMode | undefined;
-  let round: GameRound | undefined;
+  let round: GameRound | FleetRound | undefined;
   let context: GameContext | undefined;
   let timer: NodeJS.Timeout | undefined;
   let lastStatus = '';
@@ -74,17 +73,22 @@ export function createGameSession(onChange: () => void) {
       seats[available] = id;
       paint();
     },
-    leave(id: string) {
+    leave(id: string, from?: GameMode) {
       const seat = seats.indexOf(id);
-      if (seat === -1) return;
+      if (seat === -1 || (from && from !== mode)) return;
       seats[seat] = null;
+      if (round && 'leave' in round) round.leave(seat);
       paint();
     },
     input(next: GameMode, id: string, action: GameAction) {
       const seat = seats.indexOf(id);
-      if (mode !== next || !round || seat === -1) return;
+      if (mode !== next || !round || seat === -1 || !('act' in round)) return;
       if (action === 'restart') restart();
       else if (round.act(seat, action, performance.now())) paint();
+    },
+    fleetInput(id: string, action: FleetAction) {
+      const seat = seats.indexOf(id);
+      if (seat >= 0 && round && 'fleetAction' in round && round.fleetAction(seat, action, performance.now())) paint();
     },
     status(id: string): GameStatus | null {
       if (!mode || !round) return null;

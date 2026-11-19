@@ -102,11 +102,10 @@ function paint(canvas: HTMLCanvasElement, active: Direction | undefined) {
   ctx.stroke();
 }
 
-export default function DirectionalPad({ id, label, disabled, repeat = true, onDirection }: {
+export default function DirectionalPad({ id, label, disabled, onDirection }: {
   id: string;
   label: string;
   disabled: boolean;
-  repeat?: boolean;
   onDirection: (direction: Direction) => void;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -121,13 +120,13 @@ export default function DirectionalPad({ id, label, disabled, repeat = true, onD
 
   useEffect(() => {
     if (canvas.current) paint(canvas.current, disabled ? undefined : active);
-    if (disabled || !active || !repeat) return;
+    if (disabled || !active) return;
 
     const timer = window.setInterval(() => {
       if (pointer.current?.direction === active) sendRepeat(active);
     }, 120);
     return () => window.clearInterval(timer);
-  }, [active, disabled, repeat]);
+  }, [active, disabled]);
 
   useEffect(() => {
     window.addEventListener('blur', release);

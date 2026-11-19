@@ -27,7 +27,7 @@ test('selects Pong after assignment and keeps the connection when navigating hom
   expect(within(visuals).getAllByRole('button')).toHaveLength(6);
   expect(within(visuals).getByRole('button', { name: 'Starry Night' })).toBeInTheDocument();
   expect(within(visuals).queryByRole('button', { name: 'Space', exact: true })).not.toBeInTheDocument();
-  expect(within(games).getAllByRole('button')).toHaveLength(6);
+  expect(within(games).getAllByRole('button')).toHaveLength(4);
   expect(within(games).queryByRole('button', { name: 'Munchman' })).not.toBeInTheDocument();
   const pong = within(games).getByRole('button', { name: 'Pong' });
   expect(pong).toBeDisabled();
@@ -79,6 +79,47 @@ test('Pulse and Clock open dedicated controls from the mode catalog', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Mint' }));
   expect(send).toHaveBeenCalledWith('visual:updateSettings', { mode: 'clock', color: '#56ebba' });
   fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+});
+
+test('Fleet Strike renders both private grids and confirms a selected shot', () => {
+  const socket = Object.assign(new EventEmitter(), { connected: true, connect: vi.fn(), disconnect: vi.fn() });
+  vi.mocked(io).mockReturnValue(socket);
+  const send = vi.spyOn(socket, 'emit');
+  render(<App />);
+  act(() => socket.emit('obeliskAssignUser', 4));
+
+  fireEvent.click(screen.getByRole('button', { name: 'Fleet Strike' }));
+  act(() => socket.emit('obeliskInitController', 'fleet-strike'));
+  expect(send).toHaveBeenCalledWith('game:join', 'fleet-strike');
+
+  const board = Array(36).fill('water');
+  for (const cell of [0, 1, 2, 6, 12, 16, 22]) board[cell] = 'ship';
+  const targets = Array(36).fill('water');
+  targets[35] = 'miss';
+  const status = {
+    mode: 'fleet-strike', seat: 0, players: 2, message: 'Your turn', scores: [0, 0],
+    fleet: { phase: 'aim', board, targets, ships: [
+      { bow: 0, vertical: false }, { bow: 6, vertical: true }, { bow: 16, vertical: true },
+    ], ready: true, turn: 0, winner: null, lastShot: null },
+  };
+  act(() => socket.emit('game:status', status));
+  expect(screen.getByText('Player 1')).toBeInTheDocument();
+
+  const aim = screen.getByRole('region', { name: 'Target waters' });
+  const ownFleet = screen.getByRole('region', { name: 'Your fleet' });
+  expect(within(ownFleet).getByLabelText('A1, ship')).toBeInTheDocument();
+  expect(ownFleet.querySelectorAll('.Fleet-vessel--vertical')).toHaveLength(2);
+  expect(aim.querySelector('.Fleet-vessel')).toBeNull();
+  expect(within(aim).queryByLabelText('A1, ship')).not.toBeInTheDocument();
+  expect(within(aim).getByRole('button', { name: 'F6, miss' })).toBeDisabled();
+  fireEvent.click(within(aim).getByRole('button', { name: 'B4' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Fire at B4' }));
+  expect(send).toHaveBeenCalledWith('game:input', { mode: 'fleet-strike', action: { type: 'fire', cell: 9 } });
+
+  act(() => socket.emit('game:status', { ...status, fleet: { ...status.fleet, phase: 'firing' } }));
+  expect(screen.getByRole('button', { name: 'Fire' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('link', { name: 'Leave game' }));
+  expect(send).toHaveBeenCalledWith('game:leave', 'fleet-strike');
 });
 
 test('Lava Lamp opens and sends its palette, speed, and blob count', () => {

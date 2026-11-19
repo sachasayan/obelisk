@@ -1,6 +1,6 @@
 # Obelisk mode review
 
-This review covers the six visuals and six games available in the remote, including their rendering, input, layout, and start/stop behavior.
+This review covers the six visuals and four games available in the remote, including their rendering, input, layout, and start/stop behavior.
 
 ## Visuals
 
@@ -19,18 +19,32 @@ This review covers the six visuals and six games available in the remote, includ
 | --- | --- | --- |
 | [Lightcycles](../packages/obelisk-server/modes/lightcycles.index.ts) | The old spawn coordinates were outside compact panels, and movement and rendering ran separately. Spawns and trail lengths now use the configured area, and same-cell collisions are resolved from a single snapshot. The riders are all computer-driven. | Label the current experience as autoplay. For a playable mode, add two-player steering, a ready countdown, and a clear final-rider result. Keep an autonomous preview available as a separate start choice. |
 | [Stack Duel](../packages/obelisk-server/games/stack-duel.ts) | Solo or two-player falling blocks. Rivals share a piece order and send pressure rows with multi-line clears. | Try pressure timing and piece legibility on the real panel. |
-| [Deep Scan](../packages/obelisk-server/games/deep-scan.ts) | Find four beacons using range hints. A second remote takes the computer’s seat. | Calibrate the range colors for the installed LEDs. |
-| [Signal Run](../packages/obelisk-server/games/signal-run.ts) | A solo gate runner with regenerating phase charges. The scene uses the current panel dimensions. | Tune gate timing for controller latency on the local network. |
-| [Echo Keys](../packages/obelisk-server/games/echo-keys.ts) | A solo memory game with directional shapes and colors. Each successful round adds a cue. | Compare cue readability on a single tile and a wide strip. |
+| [Fleet Strike](../packages/obelisk-server/games/fleet-strike.ts) | Two phones each show a private fleet and targeting grid. The panel stages each shot as a launch, flight, and impact. | Check impact colors and caption legibility on the installed LEDs. |
 | [Pong](../packages/obelisk-server/modes/pong.index.ts) | The original step and scoring logic depended on the strip geometry and used inconsistent player indices. Motion, paddles, scores, and win text now fit the available panel with scoring credited to the correct side. Both sides can still fall back to computer control. | Separate joining from restarting so a second controller can enter an active round. Show which paddle a phone controls, add a ready or serve cue, and compare rally speeds on short and wide layouts. |
 
 ## Runtime and configurations
 
 - The server activates one mode at a time. **Turn display off** deactivates it, aborts pending Billboard work, and blanks the panel. Use **OBELISK_START_MODE=off** to leave the display off at startup. Clock still serves as the default for existing setups.
 - Static visuals do not schedule another frame after drawing. Animated effects and games use bounded loops. Simulator frames are delivered only when the display view has subscribers, and a connecting viewer can still read the latest frame.
-- **OBELISK_SIM_LAYOUT** accepts tile columns and rows followed by horizontal chain and vertical parallel counts. The simulator tests cover 128 × 16, 8 × 8, 16 × 8, 32 × 32, and 16 × 48. The compact and stacked cases exercise all twelve remote modes and verify that turning the display off stops frame updates.
+- **OBELISK_SIM_LAYOUT** accepts tile columns and rows followed by horizontal chain and vertical parallel counts. The simulator tests cover 128 × 16, 8 × 8, 16 × 8, 32 × 32, and 16 × 48. The compact and stacked cases exercise every remote mode and verify that turning the display off stops frame updates.
 - The reviewed modes run through both drawing backends, but the automated checks use the software matrix. Confirm GPIO mapping, brightness, frame cadence, legibility, and input latency on a physical Pi installation.
 - The dormant [DripClock](../packages/obelisk-server/modes/drip-clock.index.ts) and [Pac prototype](../packages/obelisk-server/_pac/index.ts) are outside the current mode registry. DripClock retains completed timers and depends on native bindings. Pac assumes a 128-pixel stride and leaves a very long timeout alive. If either is restored, apply the same layout and lifecycle contract first.
+
+## Fleet Strike artwork
+
+The cutscenes use a 41 × 9 resample of the ImageGen broadside. The remote uses the broadside, overhead ship, and sea texture from `packages/obelisk-client/public/fleet`. ImageGen generated the three sources using these prompts.
+
+### Broadside
+
+Use case: stylized-concept. Asset type: realistic game sprite for a 128×16 RGB LED battleship arcade, broadside source. Create one single fictional mid-century steel battleship viewed exactly side-on in true orthographic profile at its waterline, bow points RIGHT, whole ship from squared stern to raked prow entirely in frame with tight even margins. The long, low steel hull takes most of the width, straight upper deck, two chunky forward gun turrets clearly aimed right, a stepped armored bridge amidships, short funnels aft, a narrow mast with a prominent dark radar crossbar. Realistic naval architecture and proportions. Strong clean low-frequency silhouette that remains readable reduced to about 39×10 pixels. Semi-realistic, crisp shaded steel blue and gunmetal, midnight-blue upper faces, cool gray rim light on the bridge and deck, a restrained rust-red boot stripe, pale gray details. Flat neutral overhead and left directional soft light. Isolated on true transparent background. DO NOT add water, waves, reflections, smoke, crew, land, text, flags, insignia, numbers, horizon, drop shadow, sea foam, or any element outside the ship. Landscape.
+
+### Overhead ship
+
+Use case: stylized-concept. Game sprite, true transparent background. Show one fictional mid-century steel warship with battleship silhouette seen from a strict vertically overhead orthographic camera, bow pointing exactly RIGHT. Ship lies flat horizontally in image, entirely visible bow to stern, isolated cutout. Make the shape readable at 90 CSS pixels long: wide easily distinguished steel-blue hull, a pointed cream-gray bow, squared stern, dark armored deck, two clear chunky forward turrets and broad bridge block, a few lighter deck edges and details. Ship proportions are 4:1, angular silhouette, realistic illustrative metal handling, no perspective or camera tilt, neutral low sunlight, high enough tonal contrast to read on dark teal water. No ocean, wake, background, drop shadow, flag, text, badges, serial numbers, UI, framing, or second ship. Landscape composition.
+
+### Water
+
+Use case: photorealistic-natural. Asset type: seamless-feeling ocean surface background for a phone-based naval targeting grid. Photograph open moderately calm deep slate blue and muted teal seawater at dusk under overcast light from straight overhead. Subtle long ripples and a few muted bands of turquoise reflection across the dark waves. Use low and very even contrast for a screen backdrop beneath thin grid lines. A little documentary texture. Fill the entire square edge to edge with water, no sky or horizon line, no shore, no ship, no words, no lens effects, no bright foam, no framing. Square.
 
 ## 3D preview textures
 
