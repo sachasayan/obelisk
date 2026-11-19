@@ -1,12 +1,13 @@
 import {
-  AmbientLight, BoxGeometry, Color, DataTexture, DirectionalLight, Group,
-  Mesh, MeshStandardMaterial, PerspectiveCamera, PlaneGeometry, RGBAFormat,
+  ACESFilmicToneMapping, BoxGeometry, DataTexture, Group,
+  Mesh, MeshStandardMaterial, PCFShadowMap, PerspectiveCamera, PlaneGeometry, RGBAFormat,
   Scene, ShaderMaterial, Vector2, WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { PanelGeometry } from '../../../../shared/panel';
 import { writeRgba } from './frame';
 import type { DisplayFrame } from './frame';
+import { createPanelRoom } from './panel-room';
 
 const lensVertex = `
   varying vec2 vUv;
@@ -30,7 +31,7 @@ const lensFragment = `
     float lens = 1.0 - smoothstep(0.21, 0.31, distanceFromCenter);
     float halo = 1.0 - smoothstep(0.18, 0.58, distanceFromCenter);
     float highlight = 1.0 - smoothstep(0.02, 0.16, length(fract(local) - vec2(0.43, 0.43)));
-    vec3 plastic = vec3(0.036, 0.042, 0.046);
+    vec3 plastic = vec3(0.052, 0.052, 0.053);
     vec3 bulb = vec3(0.095, 0.107, 0.116) + 0.04 * highlight;
     vec3 color = mix(plastic, bulb, lens)
       + pow(led, vec3(0.65)) * (lens * 0.93 + halo * 0.17);
@@ -40,17 +41,25 @@ const lensFragment = `
 export function createPanelScene(container: HTMLElement, { width, height, tileWidth, tileHeight }: PanelGeometry) {
   const renderer = new WebGLRenderer({ antialias: true, alpha: false });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.toneMapping = ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.03;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = PCFShadowMap;
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = true;
   renderer.domElement.setAttribute('aria-label', 'Live 3D LED installation');
   renderer.domElement.setAttribute('role', 'img');
   container.append(renderer.domElement);
 
   const scene = new Scene();
-  scene.background = new Color(0x30393e);
-  const camera = new PerspectiveCamera(34, 1, 0.1, 2500);
+  const camera = new PerspectiveCamera(34, 1, 0.1, Math.max(2500, Math.max(width, height) * 16));
+  const room = createPanelRoom({ width, height, tileWidth, tileHeight }, Math.min(8, renderer.capabilities.getMaxAnisotropy()), render);
+  scene.background = room.background;
+  scene.add(room.room);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enablePan = false;
   controls.minDistance = Math.max(height * 1.6, width * 0.24);
-  controls.maxDistance = width * 7;
+  controls.maxDistance = Math.max(width, height) * 12;
   controls.minAzimuthAngle = -Math.PI / 2.5;
   controls.maxAzimuthAngle = Math.PI / 2.5;
   controls.minPolarAngle = Math.PI / 5;
@@ -61,17 +70,13 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
   const lenses = new PlaneGeometry(tileWidth - 0.2, tileHeight - 0.2);
   const body = new BoxGeometry(tileWidth - 0.26, tileHeight - 0.26, 1.75);
   const casing = new MeshStandardMaterial({ color: 0x161c20, roughness: 0.61, metalness: 0.22 });
-  const wall = new MeshStandardMaterial({ color: 0x505a61, roughness: 0.96 });
-  const wallGeometry = new PlaneGeometry(width * 12, width * 12);
-  const surface = new Mesh(wallGeometry, wall);
-  surface.position.z = -3.75;
-  scene.add(surface);
 
   const mounting = new Group();
   scene.add(mounting);
   const railGeometry = new BoxGeometry(width + 0.8, height * 0.67, 0.9);
   const rail = new Mesh(railGeometry, casing);
   rail.position.z = -2.25;
+  rail.castShadow = true;
   mounting.add(rail);
 
   const tileMaterials: ShaderMaterial[] = [];
@@ -81,6 +86,7 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
       const y = height / 2 - (row + 0.5) * tileHeight;
       const tile = new Mesh(body, casing);
       tile.position.set(x, y, -0.9);
+      tile.castShadow = true;
       mounting.add(tile);
 
       const material = new ShaderMaterial({
@@ -100,11 +106,6 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
     }
   }
 
-  scene.add(new AmbientLight(0xaabecb, 1.16));
-  const key = new DirectionalLight(0xfff0d3, 2.35);
-  key.position.set(-width * 0.38, width * 0.55, width * 0.7);
-  scene.add(key);
-
   function render() {
     renderer.render(scene, camera);
   }
@@ -112,15 +113,16 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
   function fitDistance(aspect: number) {
     const fov = camera.fov * Math.PI / 180;
     return Math.max(
-      width / (1.7 * Math.tan(fov / 2) * aspect),
-      (height + 15) / (1.1 * Math.tan(fov / 2)),
+      width / (1.6 * Math.tan(fov / 2) * aspect),
+      (height + room.scale * 26) / (1.15 * Math.tan(fov / 2)),
     );
   }
 
   function setView(front: boolean) {
     const distance = fitDistance(camera.aspect);
-    controls.target.set(0, 0, 0);
-    camera.position.set(front ? 0 : -distance * 0.27, front ? 0 : distance * 0.19, distance);
+    const y = front ? 0 : -room.scale * 4;
+    controls.target.set(0, y, 0);
+    camera.position.set(front ? 0 : -distance * .24, front ? y : y + distance * .155, distance);
     controls.update();
     render();
   }
@@ -132,7 +134,7 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
     const scale = fitDistance(nextAspect) / fitDistance(camera.aspect);
     camera.aspect = nextAspect;
     camera.updateProjectionMatrix();
-    if (camera.position.lengthSq() && scale !== 1) {
+    if (camera.position.lengthSq() && Number.isFinite(scale) && scale !== 1) {
       camera.position.sub(controls.target).multiplyScalar(scale).add(controls.target);
       controls.update();
     }
@@ -163,10 +165,9 @@ export function createPanelScene(container: HTMLElement, { width, height, tileWi
       lenses.dispose();
       body.dispose();
       railGeometry.dispose();
-      wallGeometry.dispose();
+      room.dispose();
       tileMaterials.forEach((material) => material.dispose());
       casing.dispose();
-      wall.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
       renderer.domElement.remove();

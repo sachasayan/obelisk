@@ -1,60 +1,31 @@
-import { createModeTimers } from '../panel/mode-timers';
+import type { ModeState } from '../panel/types';
 
+let timer: NodeJS.Timeout;
 
-const timers = createModeTimers();
+function init({ matrix }: ModeState) {
+  const width = matrix.width();
+  const height = matrix.height();
+  const phase = Float32Array.from({ length: width * height }, () => Math.random() * Math.PI * 2);
 
-class Pulser {
-  constructor(
-    readonly x: number,
-    readonly y: number,
-    readonly offset: number
-  ) { }
+  function paint() {
+    const time = performance.now() * .0003;
+    matrix.clear();
 
-  getBrightness(t: number) {
-    const s = 30;
-    const z = 0.3;
-    const brightness =  255 * Math.max(0, (s+1) * Math.sin( z* ((t / 1000) + (this.offset * 1000)) ) - s);
-
-    return{r: brightness, g: brightness, b: brightness};
-  }
-
-  // nextColor(t: number): number {
-  //   /** You could easily work position-dependent logic into this expression */
-  //   const brightness = 0xFF & Math.max(0, 255 * (Math.sin(this.f * t / 1000)));
-
-  //   return (brightness << 16) | (brightness << 8) | brightness;
-  // }
-}
-
-
-function init(state) {
-  let {matrix} = state;
-  matrix.clear();
-
-  const pulsers: Pulser[] = [];
-
-  for (let x = 0; x < matrix.width(); x++) {
-    for (let y = 0; y < matrix.height(); y++) {
-      pulsers.push(new Pulser(x, y, 5 * Math.random()));
+    for (let i = 0; i < phase.length; i++) {
+      const value = Math.round(255 * Math.max(0, 31 * Math.sin(time + phase[i]) - 30));
+      if (value > 0) matrix.fgColor(value * 0x010101).setPixel(i % width, Math.floor(i / width));
     }
+
+    matrix.sync();
   }
-  matrix.afterSync((mat, dt, t) => {
-    pulsers.forEach(pulser => {
-      matrix.fgColor(pulser.getBrightness(t)).setPixel(pulser.x, pulser.y);
-    });
 
-    timers.schedule(() => matrix.sync(), 0);
-  });
-
-  matrix.sync();
-
+  paint();
+  timer = setInterval(paint, 40);
 }
 
-function deactivate() {
-  timers.clear();
-}
-
-let Pulse = { init, deactivate };
-
-
-export { Pulse };
+export const Pulse = {
+  init,
+  deactivate() {
+    clearInterval(timer);
+  },
+};

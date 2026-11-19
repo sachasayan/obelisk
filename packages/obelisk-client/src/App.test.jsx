@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { io } from 'socket.io-client';
 import { afterEach, expect, test, vi } from 'vitest';
 import App from './App';
@@ -19,7 +19,11 @@ test('selects Pong after assignment and keeps the connection when navigating hom
 
   expect(screen.getByRole('heading', { name: 'Obelisk', level: 1 })).toBeInTheDocument();
   expect(screen.queryByRole('link', { name: /open virtual panel/i })).not.toBeInTheDocument();
-  const pong = screen.getByRole('button', { name: 'Pong' });
+  const visuals = screen.getByRole('region', { name: 'Visuals' });
+  const games = screen.getByRole('region', { name: 'Games' });
+  expect(within(visuals).getAllByRole('button')).toHaveLength(6);
+  expect(within(games).getAllByRole('button')).toHaveLength(3);
+  const pong = within(games).getByRole('button', { name: 'Pong' });
   expect(pong).toBeDisabled();
   act(() => socket.emit('obeliskAssignUser', 0));
   expect(pong).toBeEnabled();
@@ -32,6 +36,8 @@ test('selects Pong after assignment and keeps the connection when navigating hom
   fireEvent.click(screen.getByRole('link', { name: 'Home' }));
   expect(screen.getByRole('button', { name: 'Pong' })).toBeEnabled();
   expect(socket.connect).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Turn display off' }));
+  expect(send).toHaveBeenCalledWith('changeMode', 'exit');
 
   act(() => socket.emit('disconnect'));
   expect(screen.getByRole('button', { name: 'Pong' })).toBeDisabled();

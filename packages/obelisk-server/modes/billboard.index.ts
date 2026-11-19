@@ -1,15 +1,24 @@
 import type { PNG } from 'pngjs';
+import { drawFittedText } from '../panel/text-layout';
 import type { ModeState } from '../panel/types';
 import { forEachOpaquePixel, readPng } from '../png';
 import { fetchArrivalMinutes } from '../ttc';
 
+const torontoTime = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'America/Toronto',
+  hour12: false,
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
 let stop = () => {};
 
-function init({ matrix, loadFont }: ModeState) {
+function init(state: ModeState) {
+  const { matrix } = state;
+  const width = matrix.width();
+  const height = matrix.height();
   const activation = new AbortController();
   const { signal } = activation;
-  const clockFont = loadFont('helvR12');
-  const arrivalFont = loadFont('5x7');
   let image: PNG | undefined;
   let minutes: number | undefined;
   let frameTimer: NodeJS.Timeout | undefined;
@@ -17,8 +26,7 @@ function init({ matrix, loadFont }: ModeState) {
 
   async function updateArrival() {
     try {
-      const requestSignal = AbortSignal.any([signal, AbortSignal.timeout(8000)]);
-      minutes = await fetchArrivalMinutes(requestSignal);
+      minutes = await fetchArrivalMinutes(AbortSignal.any([signal, AbortSignal.timeout(8000)]));
     } catch (error) {
       minutes = undefined;
       if (!signal.aborted) console.warn('Could not read TTC arrivals:', error);
@@ -33,31 +41,45 @@ function init({ matrix, loadFont }: ModeState) {
     clearTimeout(updateTimer);
   };
 
-  matrix.afterSync(() => {
-    if (signal.aborted) return;
+  function paint() {
+    const now = new Date();
+    const time = torontoTime.format(now);
+    const arrivals = minutes === undefined ? ['--', '-'] : [`${minutes}m`, String(minutes)];
+    matrix.clear();
 
-    const time = new Date().toLocaleString('en-US', {
-      timeZone: 'America/Toronto',
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: true,
-    });
-    matrix.clear().font(clockFont).fgColor(0x333333).drawText(time, 2, 0);
-    if (image) {
-      forEachOpaquePixel(image, (x, y, color) => {
-        matrix.fgColor(color).setPixel(x + 96, y + 5);
-      });
+    if (width >= 40) {
+      const timeWidth = Math.floor(width * .55);
+      const iconWidth = image && width - timeWidth >= image.width + 26 && height >= image.height ? image.width + 2 : 0;
+      drawFittedText(state, [time], { width: timeWidth, height }, 0xff80cb);
+      if (image && iconWidth) {
+        const top = Math.floor((height - image.height) / 2);
+        forEachOpaquePixel(image, (x, y, color) => matrix.fgColor(color).setPixel(x + timeWidth, y + top));
+      }
+      drawFittedText(state, arrivals, { x: timeWidth + iconWidth, width: width - timeWidth - iconWidth, height }, 0xf5c5ef);
+    } else if (width >= 15 && height >= 12) {
+      const rowHeight = Math.floor(height / 2);
+      drawFittedText(state, [time], { width, height: rowHeight }, 0xff80cb);
+      drawFittedText(state, arrivals, { y: rowHeight, width, height: height - rowHeight }, 0xf5c5ef);
+    } else {
+      const bounds = { width, height };
+      const [hour, minute] = time.split(':');
+      const phase = Math.floor(now.getTime() / 2000) % 3;
+      if (phase === 2) {
+        drawFittedText(state, [...arrivals, '-'], bounds, 0xf5c5ef);
+      } else if (!drawFittedText(state, [time], bounds, 0xff80cb)) {
+        drawFittedText(state, [phase === 0 ? hour : minute], bounds, 0xff80cb);
+      }
     }
-    const arrival = minutes === undefined ? '--' : `${minutes}m`;
-    matrix.font(arrivalFont).fgColor(0x222222).drawText(arrival, 110, 5);
-    frameTimer = setTimeout(() => matrix.sync(), 1000);
-  });
+
+    matrix.sync();
+    frameTimer = setTimeout(paint, 1000 - now.getMilliseconds());
+  }
 
   readPng('streetcar.png')
     .then((streetcar) => { image = streetcar; })
-    .catch((error) => console.error('Could not read the streetcar image:', error));
+    .catch((error) => { if (!signal.aborted) console.error('Could not read the streetcar image:', error); });
   void updateArrival();
-  matrix.sync();
+  paint();
 }
 
 export const Billboard = {

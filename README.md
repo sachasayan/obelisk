@@ -83,8 +83,9 @@ npm run simulate
 ```
 
 Open <http://127.0.0.1:3001/display> for the live panel and choose **2D panel**
-or **3D installation**. Use the docked remote to change modes or play Pong
-alongside the preview. Drag the divider to resize the remote on a wider screen.
+or **3D installation**. The 3D view mounts the live tiles on a lit oak wall.
+Use **Visuals** or **Games** in the docked remote to switch modes, or choose
+**Turn display off** to stop the current mode. Drag the divider to resize the remote on a wider screen.
 Use **Remote** to collapse or reopen the dock. The dock loads the same remote served at `/` and occupies a
 player slot. The 2D view can show the individual pixel grid. In 3D, drag to orbit, scroll or pinch to zoom,
 and use **Front view** to see the panel head-on. Select **Munchman** in the
@@ -94,9 +95,19 @@ demo movement. WASD also works in the server terminal when it is interactive.
 
 If another server is using the default port, run
 `PORT=3002 npm run simulate` and open <http://127.0.0.1:3002/display>.
-The simulator uses the dimensions in `packages/obelisk-server/config.ts`
-and the bundled bitmap fonts. Actual brightness, panel scan timing, and
-GPIO behavior need verification on the physical installation.
+The simulator uses the dimensions in `packages/obelisk-server/config.ts` by default
+and draws text with the bundled bitmap fonts. Use `OBELISK_SIM_LAYOUT` to override
+the simulator layout without changing the hardware configuration. The format is
+`COLSxROWS:CHAINxPARALLEL`.
+
+```sh
+OBELISK_SIM_LAYOUT=16x16:2x2 OBELISK_START_MODE=off npm run simulate
+```
+
+This starts with the display off and previews a 32 × 32 pixel, four-tile installation.
+Omit `OBELISK_START_MODE` to start on Clock, or set it to a mode name such as `space`.
+Actual brightness, panel scan timing, and GPIO behavior need verification on the physical installation.
+See the [mode review](docs/mode-review.md) for design and implementation follow-ups.
 
 ## Run with an LED panel
 
@@ -112,8 +123,8 @@ same hardware peripheral.
    matrix options and match the panel geometry, GPIO mapping, and brightness
    to your hardware. `config.example.ts` shows the same settings with a lower
    starting brightness.
-3. Run `npm run clientbuild`, then `npm run obelisk`. The server starts the
-   Clock mode when the panel is enabled.
+3. Run `npm run clientbuild`, then `npm run obelisk`. The server starts on Clock
+   when the panel is enabled. Use `OBELISK_START_MODE=off npm run obelisk` to start it blank.
 
 The server listens on `127.0.0.1:3001` by default. To use a phone on your local
 network, run `HOST=0.0.0.0 npm run obelisk` and open the Pi's IP address on port

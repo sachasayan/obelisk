@@ -1,212 +1,124 @@
-import { createModeTimers } from '../panel/mode-timers';
-import type { ModeState, PanelMatrix, PlayerData } from '../panel/types';
-interface PongGameSettings {
-  defaultBallVelocity: number;
-  paddleRadius: number;
-};
+import { drawFittedText } from '../panel/text-layout';
+import type { ModeState } from '../panel/types';
 
-enum STATUS {
-  INTRO,
-  PLAYING_GAME,
-  WIN_SCREEN
-}
+let timer: NodeJS.Timeout;
 
-interface PongGameState {
-  activeScreen: STATUS,
-  score: number[],
-  paddles: number[],
-  ball: {
-    x: number,
-    y: number,
-    heading: number,
-    velocity: number
+function init(state: ModeState) {
+  const { matrix, playerData } = state;
+  const right = matrix.width() - 1;
+  const bottom = matrix.height() - 1;
+  const radius = Math.max(1, Math.round((bottom + 1) * .125));
+  const speed = Math.max(6, right * .58);
+  const score = [0, 0];
+  const paddles = [Math.floor(bottom / 2), Math.floor(bottom / 2)];
+  const ball = { x: 0, y: 0, vx: 0, vy: 0 };
+  let winner: number | undefined;
+  let playAt: number;
+  let lastFrame = performance.now();
+
+  function serve(now: number, delay: number) {
+    ball.x = right / 2;
+    ball.y = bottom / 2;
+    ball.vx = Math.random() < .5 ? -speed : speed;
+    ball.vy = (Math.random() - .5) * bottom * .65;
+    playAt = now + delay;
   }
-};
 
-let gameSettings: PongGameSettings = {
-  defaultBallVelocity: 64,
-  paddleRadius: 2
-};
-
-let gameState: PongGameState;
-
-const timers = createModeTimers();
-let matrix: PanelMatrix;
-let playerData: (PlayerData | undefined)[];
-
-function resetBall() {
-  let { paddles } = gameState;
-  let heading = paddles[0] > paddles[1] ? 0.75 + ((Math.random() * 0.25) - 0.125) :    // A random value within 45º of straight, randomly left or right.
-    paddles[1] < paddles[0] ?  0.25 + ((Math.random() * 0.25) - 0.125) :
-    (Math.random() < 0.5 ? 0.25 : 0.75) + ((Math.random() * 0.25) - 0.125);
-
-  gameState.ball = {
-    ...gameState.ball,
-    x: (Math.floor(matrix.width()/2)),
-    y: (Math.floor(matrix.height()/2)),
-    heading: heading
-  }
-}
-
-function resetGameState() {
-  gameState = {
-    activeScreen: STATUS.PLAYING_GAME,
-    score: [0, 0],
-    paddles:[Math.floor(matrix.height()/2), Math.floor(matrix.height()/2)],
-    ball: {
-      x: (Math.floor(matrix.width()/2)),
-      y: (Math.floor(matrix.height()/2)),
-      heading: (Math.random() < 0.5 ? 0.25 : 0.75) + ((Math.random() * 0.25) - 0.125), // (Math.random() * 0.25) + 0.125 + Math.random() < 0.5 ? 0 : 0.5,   // A random value within 45º of straight, randomly left or right.
-      velocity: gameSettings.defaultBallVelocity, // in pixels per second
-    },
-  }
-}
-
-function incrementScore(player: number){
-  gameState.score[player]++;
-  if (gameState.score[player] >= 10) {
-    gameState.activeScreen = STATUS.WIN_SCREEN;
-     timers.schedule(resetGameState, 2000);
-     timers.schedule(tick, 3000);
-  } else {
-    gameState.ball.velocity = gameSettings.defaultBallVelocity + (2*Math.min(...gameState.score));
-    resetBall();
-    timers.schedule(tick, 2000);
-  }
-}
-
-function inputLoop(t: number){
-  gameState.paddles.forEach((p, i) => {
-    if (playerData[i]) {
-      gameState.paddles[i] = Math.round(playerData[i].y * (matrix.height() - 1));
-    } else {
-      const progress = Math.min(1, Math.max(0, gameState.ball.x / Math.max(1, matrix.width() - 1)));
-      const certainty = i === 0 ? 1 - progress : progress;
-      let motorImprecision = (3 * Math.sin( Math.PI * (t/1000)));
-      gameState.paddles[i] = Math.round(
-        ((1-certainty) * (matrix.height()/2)) + //Start with the middle
-        (certainty * (gameState.ball.y + motorImprecision)) // Where we're aiming for, with motor imprecision
-      );
+  function updatePaddles(now: number) {
+    for (const i of [0, 1]) {
+      const player = playerData[i];
+      const approach = i === 0 ? 1 - ball.x / right : ball.x / right;
+      const target = player ? player.y * bottom
+        : (1 - approach) * bottom / 2 + approach * (ball.y + bottom * .18 * Math.sin(now / 620));
+      paddles[i] = Math.round(Math.max(radius, Math.min(bottom - radius, target)));
     }
-  });
-}
-
-function tick() {
-  let ball = gameState.ball;
-  // Move ball
-  ball.x += Math.sin(Math.PI*ball.heading*2);
-  ball.y += Math.cos(Math.PI*ball.heading*2);
-
-  // Hitting edges? Apply reflection
-  let reflect = () => {
-    ball.heading = ball.heading < 0.5 ? 0.5 - ball.heading : 1.5 - ball.heading;
-  }
-  if (ball.y < 0){
-    ball.y = 0 - ball.y;
-    reflect();
-  };
-  if (ball.y >= matrix.height()){
-    ball.y = matrix.height() - (ball.y - matrix.height());
-    reflect();
-  };
-
-  let getSpread = (paddle: number): number => {
-    // IE, get the relative position of the ball to the center of the paddle...
-    return ((ball.y - gameState.paddles[paddle])  / gameSettings.paddleRadius) * 0.125; // 0.125 aka no more than 45º off center
-  };
-
-  // Did we hit a paddle? Reflect x.
-  if ( ball.x < 1  && Math.abs(ball.y - gameState.paddles[0]) <= gameSettings.paddleRadius ){
-      ball.x = 1 + (1- ball.x) ;
-      ball.heading = 0.25 - getSpread(0);
-  }
-  if ( ball.x > matrix.width()-1  && Math.abs(ball.y - gameState.paddles[1]) <= gameSettings.paddleRadius ){
-      ball.x = matrix.width() + (matrix.width() - 1 - ball.x) ;
-      ball.heading = 0.75 + getSpread(1);
   }
 
-  // Check for out of x bounds, if so apply score
-  if (ball.x >= 0 && ball.x <= matrix.width()) {
-    timers.schedule(() => {tick()}, (1 / ball.velocity) * 1000);
-  };
-  if (ball.x < 0) { incrementScore(0); };
-  if (ball.x > matrix.width()) { incrementScore(1); };
+  function moveBall(now: number, dt: number) {
+    const steps = Math.max(1, Math.ceil(Math.max(Math.abs(ball.vx), Math.abs(ball.vy)) * dt));
+    const step = dt / steps;
+    for (let i = 0; i < steps; i++) {
+      ball.y += ball.vy * step;
+      if (ball.y < 0 || ball.y > bottom) {
+        ball.y = ball.y < 0 ? -ball.y : 2 * bottom - ball.y;
+        ball.vy *= -1;
+      }
 
-}
+      const x = ball.x + ball.vx * step;
+      const hitsLeft = ball.vx < 0 && x <= 0;
+      const hitsRight = ball.vx > 0 && x >= right;
+      if (!hitsLeft && !hitsRight) {
+        ball.x = x;
+        continue;
+      }
 
-function displayIntroScreen(){}
+      const defending = hitsLeft ? 0 : 1;
+      const offset = (ball.y - paddles[defending]) / radius;
+      if (Math.abs(offset) <= 1) {
+        ball.x = hitsLeft ? -x : 2 * right - x;
+        ball.vx = -Math.sign(ball.vx) * Math.min(speed * 1.55, Math.abs(ball.vx) * 1.05);
+        ball.vy = offset * bottom * .72;
+        continue;
+      }
 
-function displayGameScreen(){
-  let { paddleRadius } = gameSettings;
-
-  matrix
-    .fgColor(0x222222)
-    .drawLine(matrix.width()/2-1, 0, matrix.width()/2-1, matrix.height()-1)
-    .drawLine(matrix.width()/2, 0, matrix.width()/2, matrix.height()-1);
-
-  // Draw paddles
-  matrix.fgColor(0xFFFFFF);
-  matrix.drawLine(0, gameState.paddles[0] - paddleRadius, 0, gameState.paddles[0] + paddleRadius);
-  matrix.drawLine(matrix.width()-1, gameState.paddles[1] - paddleRadius, matrix.width()-1, gameState.paddles[1] + paddleRadius);
-
-
-   matrix
-    .fgColor(0x222222)
-    .drawText(String(gameState.score[1]), matrix.width()/2 - 7 - 2, 0)
-    .drawText(String(gameState.score[0]), matrix.width()/2 + 2,  0);
-
-
-  // Draw ball
-  matrix
-    .fgColor(0xBBFF00)
-    .setPixel(Math.floor(gameState.ball.x), Math.floor(gameState.ball.y));
-}
-
-function displayWinScreen(){
-
-}
-
-function gameLoop(){
-  switch(gameState.activeScreen) {
-    case STATUS.PLAYING_GAME:
-      displayGameScreen();
+      const scoring = 1 - defending;
+      score[scoring]++;
+      if (score[scoring] >= 10) {
+        winner = scoring;
+        playAt = now + 2400;
+      } else {
+        serve(now, 1100);
+      }
       break;
-    case STATUS.INTRO:
-      displayIntroScreen();
-      break;
-    case STATUS.WIN_SCREEN:
-      displayWinScreen();
-      break;
-    default:
-      break;
+    }
   }
-}
 
-function init (state: ModeState){
-    playerData = state.playerData;
-    matrix = state.matrix;
+  function paint() {
+    const { width, height } = { width: right + 1, height: bottom + 1 };
     matrix.clear();
 
-    matrix.font(state.loadFont('helvR12'));
+    if (winner !== undefined) {
+      const player = String(winner + 1);
+      drawFittedText(state, [`P${player} WINS`, `P${player}`, player], { width, height }, 0xffe552);
+    } else {
+      const center = Math.floor(width / 2);
+      matrix.fgColor(0x283847).drawLine(center, 0, center, bottom);
+      const scoreHeight = Math.max(6, Math.floor(height * .4));
+      drawFittedText(state, [String(score[0])], { width: center, height: scoreHeight }, 0x67c8dc);
+      drawFittedText(state, [String(score[1])], { x: center + 1, width: right - center, height: scoreHeight }, 0xe57fbb);
 
-    resetGameState();
-    timers.schedule(tick, 3000);
-
-    matrix.afterSync((mat, dt, t) => {
-      matrix.clear();
-      inputLoop(t);
-      gameLoop();
-
-      timers.schedule(() => matrix.sync(), 0);
-    });
+      matrix.fgColor(0xffffff)
+        .drawLine(0, paddles[0] - radius, 0, paddles[0] + radius)
+        .drawLine(right, paddles[1] - radius, right, paddles[1] + radius)
+        .fgColor(0xedff55).setPixel(Math.round(ball.x), Math.round(ball.y));
+    }
 
     matrix.sync();
+  }
+
+  function frame() {
+    const now = performance.now();
+    const dt = Math.min(.1, (now - lastFrame) / 1000);
+    lastFrame = now;
+
+    if (winner !== undefined && now >= playAt) {
+      winner = undefined;
+      score.fill(0);
+      serve(now, 1000);
+    }
+    updatePaddles(now);
+    if (winner === undefined && now >= playAt) moveBall(now, dt);
+    paint();
+  }
+
+  serve(lastFrame, 1100);
+  paint();
+  timer = setInterval(frame, 1000 / 30);
 }
 
-function deactivate() {
-  timers.clear();
-}
-
-let Pong = { init, deactivate };
-
-export { Pong };
+export const Pong = {
+  init,
+  deactivate() {
+    clearInterval(timer);
+  },
+};

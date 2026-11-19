@@ -1,3 +1,14 @@
+.ModeSelector-group + .ModeSelector-group {
+  margin-top: clamp(.75rem, 3vw, 1rem);
+}
+
+.ModeSelector-group h2 {
+  margin: 0 .23rem .36rem;
+  font-size: clamp(.85rem, 3.7vw, 1.05rem);
+  font-weight: 720;
+  color: #dadce4;
+}
+
 .ModeSelector-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -62,14 +73,14 @@
   display: block;
   min-width: 5rem;
   min-height: 2.75rem;
-  margin: .38rem auto 0;
+  margin: .65rem auto .4rem;
   padding: .45rem .75rem;
-  border: 1px solid transparent;
+  border: 1px solid #27212f;
   border-radius: .48rem;
   background: transparent;
   color: #fff;
   font: inherit;
-  font-size: clamp(.95rem, 4.25vw, 1.24rem);
+  font-size: .85rem;
   font-weight: 700;
   letter-spacing: -.02em;
   cursor: pointer;

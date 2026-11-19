@@ -1,93 +1,69 @@
-import { forEachOpaquePixel, readPng } from '../png';
 import chroma from 'chroma-js';
+import type { PNG } from 'pngjs';
+import type { ModeState } from '../panel/types';
+import { forEachOpaquePixel, readPng } from '../png';
 
-let matrix;
+const palette = chroma.scale([0xf3fbff, 0x131526]);
 let stop = () => {};
 
+function init({ matrix }: ModeState) {
+  const width = matrix.width();
+  const height = matrix.height();
+  const starSpeed = Math.min(90, height * 3);
+  const starCount = Math.min(1024, Math.ceil(width * height / 16));
+  const starfield = Array.from({ length: starCount }, () => {
+    const distance = 1 - Math.pow(1000, -Math.random());
+    return {
+      x: Math.floor(Math.random() * width),
+      y: Math.random() * height,
+      speed: starSpeed * (1 - distance),
+      trail: Math.floor((1 - distance) * 3),
+      color: palette(distance).num(),
+    };
+  });
 
-const palette = chroma.scale([0xFFFFFF, 0x111111]);
-const settings = {
-  starDensity: 1
-};
+  let rocket: PNG | undefined;
+  let active = true;
+  let lastFrame = performance.now();
 
-class Star {
-  distance: number; // Distance (from camera) affects brightness and speed
-  y: number;
-  x: number;
-
-  constructor() {
-    this.distance = 1 - Math.pow(1000, -Math.random());  // 0-1
-    this.x = Math.random()* matrix.width();
-    this.y = Math.random() * 16;
-  }
-
-  step(dt : number) {
-    this.y += 100 * (1-this.distance) * (dt/1000);
-    if (this.y > 16) {
-      this.y -= 32;
-    }
-  }
-}
-
-function init (state){
-    matrix = state.matrix;
+  function paint() {
+    const now = performance.now();
+    const dt = Math.min(100, now - lastFrame) / 1000;
+    lastFrame = now;
     matrix.clear();
 
-    const activation = new AbortController();
-    let frameTimer: NodeJS.Timeout;
-    stop = () => {
-      activation.abort();
-      clearTimeout(frameTimer);
-    };
-
-    let rocket;
-    const starfield: Star[] = [];
-
-    for (let x = 0; x < matrix.width() * settings.starDensity ; x++) {
-      starfield.push(new Star());
+    for (const star of starfield) {
+      star.y += star.speed * dt;
+      if (star.y >= height) star.y = -star.trail;
+      const y = Math.floor(star.y);
+      if (y + star.trail >= 0) {
+        matrix.fgColor(star.color).drawLine(star.x, Math.max(0, y), star.x, Math.min(height - 1, y + star.trail));
+      }
     }
 
-    matrix.afterSync((mat, dt, t) => {
-      if (activation.signal.aborted) return;
-
-      matrix
-      .clear();
-
-      starfield.forEach(star => {
-        star.step(dt);
-        matrix.fgColor(palette(star.distance).num())
-        .drawLine(star.x, Math.floor(star.y), star.x, Math.floor( (1- star.distance) * 3 + star.y  ));
-        //.setPixel(star.x, Math.floor(star.y));
+    if (rocket) {
+      const scale = Math.min(1, width / rocket.width, height / rocket.height);
+      const spareX = width - Math.round(rocket.width * scale);
+      const spareY = height - Math.round(rocket.height * scale);
+      const x = Math.floor(spareX / 2 + Math.min(5, spareX / 2) * Math.sin(now / 650));
+      const y = Math.floor(spareY / 2 + Math.min(2, spareY / 2) * Math.sin(now / 320));
+      forEachOpaquePixel(rocket, (px, py, color) => {
+        matrix.fgColor(color).setPixel(x + Math.floor(px * scale), y + Math.floor(py * scale));
       });
+    }
 
-      if(rocket){
-        forEachOpaquePixel(rocket, (x, y, color) => {
-          matrix.fgColor(color).setPixel(
-            x + (64 - 8) + Math.round(5 * Math.sin(0.5 * Math.PI * (t / 1000))),
-            y + 1 + Math.round(1 * Math.sin(2 * Math.PI * (t / 1000))),
-          );
-        });
-      }
+    matrix.sync();
+  }
 
-      frameTimer = setTimeout(() => matrix.sync(), 40);
-    });
-
-
-    readPng('spaceship.png')
-      .then(img => {
-        rocket = img;
-        if (!activation.signal.aborted) matrix.sync();
-      })
-      .catch(err => {
-        console.error(err);
-      });
-
+  readPng('spaceship.png')
+    .then((image) => { if (active) rocket = image; })
+    .catch((error) => { if (active) console.error('Could not read the Space sprite:', error); });
+  paint();
+  const timer = setInterval(paint, 40);
+  stop = () => {
+    active = false;
+    clearInterval(timer);
+  };
 }
 
-function deactivate() {
-  stop();
-}
-
-let Space = { init, deactivate };
-
-export { Space };
+export const Space = { init, deactivate: () => stop() };

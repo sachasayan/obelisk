@@ -237,7 +237,7 @@ export default function PanelDisplay() {
         </div>
         {frame && (
           <div className="panel-metadata">
-            <span className="panel-mode">{frame.mode === 'exit' ? 'Idle' : frame.mode}</span>
+            <span className="panel-mode">{frame.mode === 'exit' ? 'Display off' : frame.mode}</span>
             <span>{frame.width} × {frame.height} pixels</span>
             <span>{(frame.width / frame.tileWidth) * (frame.height / frame.tileHeight)} tiles</span>
             <span>{frame.brightness}% brightness</span>

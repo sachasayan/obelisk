@@ -1,41 +1,34 @@
+import { drawFittedText } from '../panel/text-layout';
 import type { ModeState } from '../panel/types';
+
+const torontoTime = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'America/Toronto',
+  hour12: false,
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+});
 
 let frameTimer: NodeJS.Timeout;
 
-function init({ matrix, loadFont }: ModeState) {
-  const font = loadFont('tom-thumb');
+function init(state: ModeState) {
+  const { matrix } = state;
+  const bounds = { width: matrix.width(), height: matrix.height() };
 
-  matrix.afterSync(() => {
-    const text = new Date().toLocaleString('en-US', {
-      timeZone: 'America/Toronto',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-      hour12: true,
-    });
-    const lines: string[] = [];
-    let line = '';
-    for (const word of text.split(' ')) {
-      const candidate = line ? `${line} ${word}` : word;
-      if (line && font.stringWidth(candidate) > matrix.width()) {
-        lines.push(line);
-        line = word;
-      } else {
-        line = candidate;
-      }
-    }
-    lines.push(line);
-
+  function paint() {
+    const now = new Date();
+    const full = torontoTime.format(now);
+    const [hour, minute] = full.split(':');
+    const compact = `${hour}:${minute}`;
     matrix.clear();
-    const top = Math.floor((matrix.height() - lines.length * font.height()) / 2);
-    for (const [index, line] of lines.entries()) {
-      const x = Math.floor((matrix.width() - font.stringWidth(line)) / 2);
-      matrix.drawText(line, x, top + index * font.height());
+    if (!drawFittedText(state, [full, compact], bounds, 0xffad48)) {
+      drawFittedText(state, [now.getSeconds() % 4 < 2 ? hour : minute], bounds, 0xffad48);
     }
-    frameTimer = setTimeout(() => matrix.sync(), 1000);
-  });
+    matrix.sync();
+    frameTimer = setTimeout(paint, 1000 - now.getMilliseconds());
+  }
 
-  matrix.clear().font(font).brightness(100).fgColor(0x111111).sync();
+  paint();
 }
 
 export const Clock = {

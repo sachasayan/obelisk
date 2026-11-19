@@ -15,7 +15,7 @@ import {
   Player
 } from './munchman.types';
 
-import { fade, colors, getAdjacent } from './munchman.utils';
+import { fade, colors } from './munchman.utils';
 
 const timers = createModeTimers();
 let matrix: PanelMatrix;
@@ -67,7 +67,15 @@ function resetGame() {
 
 function canEnter({ x, y }: { x: number; y: number }) {
   const tile = gameState.field[y]?.[x];
-  return tile !== undefined && tile !== 'W' && x < matrix.width() && y < matrix.height();
+  return tile !== undefined && tile !== 'W';
+}
+
+function neighbors(x: number, y: number, previous: { x: number; y: number }) {
+  const candidates = Object.values(directionOffsets)
+    .map(([dx, dy]) => ({ x: x + dx, y: y + dy }))
+    .filter(canEnter);
+  const forward = candidates.filter((next) => next.x !== previous.x || next.y !== previous.y);
+  return forward.length ? forward : candidates;
 }
 
 function handlePlayerMovement() {
@@ -80,9 +88,7 @@ function handlePlayerMovement() {
     const [dx, dy] = directionOffsets[direction];
     target = { x: player.x + dx, y: player.y + dy };
   } else if (!manualControl && gameSettings.demoMode) {
-    const candidates = getAdjacent(player.x, player.y, matrix)
-      .filter(({ x, y }) => x !== player.previous.x || y !== player.previous.y)
-      .filter(canEnter);
+    const candidates = neighbors(player.x, player.y, player.previous);
     target = candidates[Math.floor(Math.random() * candidates.length)];
   }
 
@@ -102,9 +108,7 @@ function handleGhostMovement(){
 
   gameState.ghosts.forEach(g => {
     // Get all viable candidates.
-    let candidates = getAdjacent(g.x, g.y, matrix)
-      .filter(coords => !(coords.x == g.previous.x && coords.y == g.previous.y)) // Remove where we just came from.
-      .filter(canEnter);
+    const candidates = neighbors(g.x, g.y, g.previous);
     let finalCandidate = candidates[Math.floor(Math.random()*candidates.length)];
     g.previous = { x: g.x, y: g.y};
     if (finalCandidate) {
@@ -147,31 +151,45 @@ function displayIntroScreen(){
 
 };
 
-function displayGameScreen(t: number){
+function displayGameScreen(t: number) {
+  const { field, player, ghosts } = gameState;
+  const levelWidth = field[0].length;
+  const levelHeight = field.length;
+  const width = matrix.width();
+  const height = matrix.height();
+  const scale = Math.max(1, Math.floor(Math.min(width / levelWidth, height / levelHeight)));
+  const columns = Math.min(levelWidth, Math.floor(width / scale));
+  const rows = Math.min(levelHeight, Math.floor(height / scale));
+  const left = Math.max(0, Math.min(levelWidth - columns, player.x - Math.floor(columns / 2)));
+  const top = Math.max(0, Math.min(levelHeight - rows, player.y - Math.floor(rows / 2)));
+  const originX = Math.floor((width - columns * scale) / 2);
+  const originY = Math.floor((height - rows * scale) / 2);
 
-  // Display field
-  gameState.field.forEach((row, y) => {
-    row.forEach((c, x) => {
+  function drawCell(x: number, y: number, color: number) {
+    if (!color || x < left || x >= left + columns || y < top || y >= top + rows) return;
+    const pixelX = originX + (x - left) * scale;
+    const pixelY = originY + (y - top) * scale;
+    matrix.fgColor(color);
+    if (scale === 1) {
+      matrix.setPixel(pixelX, pixelY);
+    } else {
+      for (let row = 0; row < scale; row++) {
+        matrix.drawLine(pixelX, pixelY + row, pixelX + scale - 1, pixelY + row);
+      }
+    }
+  }
 
-    //Previously... .fgColor(c === 'D' ? colors.dot(fade(t, 1000, (x / 128) )).num() : BASE_COLORS[TILES[c]])
-    matrix
-      .fgColor(BASE_COLORS[TILES[c as keyof typeof TILES]] ?? BASE_COLORS.empty)
-      .setPixel(x, y);
-    });
-  });
-
-  // Display player
-  matrix
-    .fgColor(BASE_COLORS.player)
-    .setPixel(gameState.player.x, gameState.player.y);
-
-  // Display ghosts
-  gameState.ghosts.forEach((g, i) => {
-    matrix
-      .fgColor(colors[g.type](fade(t - gameState.animations.ghostOffset, gameSettings.ghostsTick, 0.5)).num())
-      .setPixel(g.x, g.y);
-  });
-
+  for (let y = top; y < top + rows; y++) {
+    for (let x = left; x < left + columns; x++) {
+      const tile = TILES[field[y][x] as keyof typeof TILES];
+      drawCell(x, y, BASE_COLORS[tile] ?? BASE_COLORS.empty);
+    }
+  }
+  for (const ghost of ghosts) {
+    const color = colors[ghost.type](fade(t - gameState.animations.ghostOffset, gameSettings.ghostsTick, .5)).num();
+    drawCell(ghost.x, ghost.y, color);
+  }
+  drawCell(player.x, player.y, BASE_COLORS.player);
 }
 
 function gameLoop(t: number){
@@ -199,6 +217,7 @@ function init(state: ModeState) {
   deactivate();
   matrix = state.matrix;
   const currentActivation = activation;
+  matrix.sync();
     // Load level
 
     readPng('munch-lvl.png')
@@ -209,7 +228,7 @@ function init(state: ModeState) {
         for (let y = 0; y < img.height; y++) {
           for (let x = 0; x < img.width; x++) {
             const offset = (y * img.width + x) * 4;
-            gameSettings.grid += MAP_LOOKUP[chroma(img.data.readUIntBE(offset, 3)).hex()];
+            gameSettings.grid += MAP_LOOKUP[chroma(img.data.readUIntBE(offset, 3)).hex()] ?? 'W';
           }
           gameSettings.grid += '\n';
         }
@@ -218,13 +237,15 @@ function init(state: ModeState) {
         timers.schedule(handleGhostMovement, 2000);
 
         matrix.afterSync((mat, dt, t) => {
+          timers.schedule(() => {
+            matrix.clear();
+            gameLoop(t);
+            matrix.sync();
+          }, 1000 / 30);
+        });
         matrix.clear();
-
-        gameLoop(t);
-
-        timers.schedule(() => matrix.sync(), 0);
-      });
-      matrix.sync();
+        gameLoop(0);
+        matrix.sync();
     })
     .catch(err => {
       console.error(err);

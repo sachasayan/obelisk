@@ -5,20 +5,16 @@ import express from 'express';
 import { Server } from 'socket.io';
 import type { Socket } from 'socket.io';
 import type { FontInstance } from 'rpi-led-matrix';
+import { findMode } from '../../shared/modes';
+import type { ModeName } from '../../shared/modes';
 import { isMunchmanDirection, MUNCHMAN_CONTROLLER_PATH, MUNCHMAN_MOVE } from '../../shared/munchman';
 import type { MunchmanDirection } from '../../shared/munchman';
 import { DISPLAY_CAPABILITY, DISPLAY_FRAME, DISPLAY_NAMESPACE } from '../../shared/panel';
 import { config, getHardwareOptions, panelOptions } from './config';
 import { BitmapFont } from './panel/bitmap-font';
+import { resolveSimLayout } from './panel/sim-layout';
 import type { PanelMatrix, PlayerData } from './panel/types';
 import { VirtualMatrix } from './panel/virtual-matrix';
-
-const modeNames = [
-  'billboard', 'clock', 'lightcycles', 'munchman', 'pong',
-  'pulse', 'space', 'sunlight', 'test', 'exit',
-] as const;
-
-type ModeName = typeof modeNames[number];
 
 export function createControllerServer(
   playerData: (PlayerData | undefined)[],
@@ -44,7 +40,7 @@ export function createControllerServer(
     socket.on('changeMode', (value: unknown) => {
       if (typeof value !== 'string') return;
 
-      const mode = modeNames.find((name) => name === value.toLowerCase());
+      const mode = findMode(value);
       if (!mode) return;
 
       changeMode(mode);
@@ -94,6 +90,9 @@ export function createControllerServer(
 
 function main() {
   const simulate = process.argv.includes('--simulate');
+  const startValue = process.env.OBELISK_START_MODE?.toLowerCase();
+  const startMode = startValue === 'off' ? 'exit' : findMode(startValue ?? 'clock');
+  if (!startMode) throw new Error('OBELISK_START_MODE must be a display mode or off.');
   const playerData: (PlayerData | undefined)[] = [];
   const fonts = new Map<string, FontInstance>();
   let createFont = (name: string, path: string): FontInstance => new BitmapFont(name, path);
@@ -101,15 +100,17 @@ function main() {
   let matrix: PanelMatrix | undefined;
 
   let lastFrameMode: string | undefined;
-  const virtualMatrix = simulate ? new VirtualMatrix({
+  const virtualMatrix = simulate ? new VirtualMatrix(resolveSimLayout(process.env.OBELISK_SIM_LAYOUT, {
     width: panelOptions.cols * panelOptions.chainLength,
     height: panelOptions.rows * panelOptions.parallel,
     tileWidth: panelOptions.cols,
     tileHeight: panelOptions.rows,
-  }, panelOptions.brightness, (frame) => {
+  }), panelOptions.brightness, (frame) => {
     const viewers = controller?.io.of(DISPLAY_NAMESPACE);
-    if (frame.mode === lastFrameMode) viewers?.volatile.emit(DISPLAY_FRAME, frame);
-    else viewers?.emit(DISPLAY_FRAME, frame);
+    if (viewers?.sockets.size) {
+      if (frame.mode === lastFrameMode) viewers.volatile.emit(DISPLAY_FRAME, frame);
+      else viewers.emit(DISPLAY_FRAME, frame);
+    }
     lastFrameMode = frame.mode;
   }) : undefined;
 
@@ -153,9 +154,10 @@ function main() {
     activeMode?.deactivate();
     virtualMatrix?.setMode(mode);
     matrix.afterSync(() => {});
-    matrix.clear().sync();
+    matrix.brightness(panelOptions.brightness).clear();
     activeMode = modes[mode];
-    activeMode?.init({ matrix, playerData, loadFont });
+    if (activeMode) activeMode.init({ matrix, playerData, loadFont });
+    else matrix.sync();
   }
 
   if (config.runServer || simulate) {
@@ -178,7 +180,7 @@ function main() {
     });
   }
 
-  if (matrix) changeMode('clock');
+  if (matrix) changeMode(startMode);
 }
 
 if (require.main === module) main();

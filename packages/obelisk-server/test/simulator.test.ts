@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import type { TestContext } from 'node:test';
 import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
 import { MUNCHMAN_MOVE } from '../../../shared/munchman';
@@ -35,11 +36,15 @@ function pixel(frame: Frame, x: number, y: number) {
   return Array.from(frame.rgb.subarray(offset, offset + 3));
 }
 
-test('the simulator renders real modes and reflects live controller input', { timeout: 15_000 }, async (t) => {
+async function startSimulator(t: TestContext, environment: NodeJS.ProcessEnv = {}) {
+  const offlineTransit = 'data:text/javascript,' + encodeURIComponent('globalThis.fetch = async () => new Response(null, {status: 503});');
   const server = spawn(process.execPath, [
-    '--import', 'tsx', join(__dirname, '../index.ts'), '--simulate',
+    '--import', 'tsx', '--import', offlineTransit, join(__dirname, '../index.ts'), '--simulate',
   ], {
-    env: { ...process.env, HOST: '127.0.0.1', PORT: '0' },
+    env: {
+      ...process.env, HOST: '127.0.0.1', PORT: '0',
+      OBELISK_SIM_LAYOUT: '32x16:4x1', OBELISK_START_MODE: 'clock', ...environment,
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
@@ -62,7 +67,11 @@ test('the simulator renders real modes and reflects live controller input', { ti
     server.once('exit', () => reject(new Error(output)));
   });
 
-  const url = `http://127.0.0.1:${port}`;
+  return `http://127.0.0.1:${port}`;
+}
+
+test('the simulator renders real modes and reflects live controller input', { timeout: 15_000 }, async (t) => {
+  const url = await startSimulator(t);
   const response = await fetch(url + '/api/panel');
   assert.deepEqual(await response.json(), { simulated: true });
 
@@ -133,4 +142,42 @@ test('the simulator renders real modes and reflects live controller input', { ti
   const blank = waitForFrame(viewer, (frame) => frame.mode === 'exit');
   controller.emit('changeMode', 'exit');
   assert.equal((await blank).rgb.some(Boolean), false);
+});
+
+test('all nine modes render on small and stacked panels, and off stops frame updates', { timeout: 25_000 }, async (t) => {
+  for (const [layout, width, height, tileWidth, tileHeight] of [
+    ['8x8:2x1', 16, 8, 8, 8],
+    ['16x16:2x2', 32, 32, 16, 16],
+    ['16x16:1x3', 16, 48, 16, 16],
+  ] as const) {
+    await t.test(layout, async (subtest) => {
+      const url = await startSimulator(subtest, { OBELISK_SIM_LAYOUT: layout, OBELISK_START_MODE: 'off' });
+      const viewer = io(url + DISPLAY_NAMESPACE, { autoConnect: false, transports: ['websocket'] });
+      const controller = io(url, { autoConnect: false, transports: ['websocket'] });
+      subtest.after(() => { viewer.disconnect(); controller.disconnect(); });
+      const firstFrame = waitForFrame(viewer, (frame) => frame.mode === 'exit');
+      const assigned = new Promise((resolve) => controller.once('obeliskAssignUser', resolve));
+      viewer.connect();
+      controller.connect();
+      const off = await firstFrame;
+      await assigned;
+      assert.deepEqual([off.width, off.height, off.tileWidth, off.tileHeight], [width, height, tileWidth, tileHeight]);
+      assert.equal(off.rgb.some(Boolean), false);
+
+      for (const mode of ['billboard', 'clock', 'pulse', 'space', 'sunlight', 'test', 'lightcycles', 'munchman', 'pong']) {
+        const painted = waitForFrame(viewer, (frame) => frame.mode === mode && frame.rgb.some(Boolean));
+        controller.emit('changeMode', mode);
+        assert.equal((await painted).rgb.length, width * height * 3, mode);
+      }
+
+      const stopped = waitForFrame(viewer, (frame) => frame.mode === 'exit');
+      controller.emit('changeMode', 'exit');
+      assert.equal((await stopped).rgb.some(Boolean), false);
+      const unexpected = await new Promise<boolean>((resolve) => {
+        const timer = setTimeout(() => resolve(false), 375);
+        viewer.once(DISPLAY_FRAME, () => { clearTimeout(timer); resolve(true); });
+      });
+      assert.equal(unexpected, false, 'the previous animation did not schedule another frame');
+    });
+  }
 });

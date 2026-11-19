@@ -1,135 +1,71 @@
+import type { ModeState } from '../panel/types';
 import { createModeTimers } from '../panel/mode-timers';
-import chroma from 'chroma-js';
-
-import {
-  fade,
-  isViable,
-  getAdjacent
-} from './lightcycles.utils';
-import {
-  STATUS,
-  LightCycle
-} from './lightcycles.types';
+import { LightCycle } from './lightcycles.types';
+import { getAdjacent } from './lightcycles.utils';
 
 const timers = createModeTimers();
-let matrix;
 
-let gameSettings = {
-  grid: '',
-  tick: (1000 / 20),
-  demoMode: true
-};
+function init({ matrix }: ModeState) {
+  const width = matrix.width();
+  const height = matrix.height();
+  const trailLength = Math.max(5, Math.min(64, Math.round(20 * Math.sqrt(width * height / 2048))));
+  let players: LightCycle[];
 
-let gameState;
-
-function resetGame(){
-  gameState = {
-    activeScreen: STATUS.PLAYING_GAME,
-    inputs: [],
-    players: [
-      new LightCycle(0xDF740C, { x: 62, y: 7}, -1, 0),
-      new LightCycle(0xFFE64D, { x: 62, y: 8}, -1, 0),
-      new LightCycle(0xE6FFFF, { x: 64, y: 7}, 1, 0),
-      new LightCycle(0x6FC3DF, { x: 64, y: 8}, 1, 0)
-    ]
-  };
-}
-
-//////////////////////
-// MOVEMENT
-//////////////////////
-
-
-function tick(){
-
-  gameState.players.forEach(p => {
-
-      // We'll use this in a moment to attempt to rule out any decisions that would be fatal
-      let walls = gameState.players
-        .map(e => e.coords)
-        .reduce((a, b) => a.concat(b), []);
-
-      // Get all recommended movement candidates.
-      let candidates = getAdjacent(p.coords[0].x, p.coords[0].y, matrix)
-        .filter(coord => !walls.some( (w) => (w.x == coord.x && w.y == coord.y) ) ); //Filter out walls
-
-      let finalCandidate = candidates.some( (coord) => ( coord.x == p.coords[0].x + p.intent.x && coord.y == p.coords[0].y + p.intent.y ) ) && Math.random() > 0.01 ?
-            { x: p.coords[0].x + p.intent.x, y: p.coords[0].y + p.intent.y } :
-            candidates[Math.floor(Math.random()*candidates.length)];
-
-      if (finalCandidate){
-        p.intent = {
-          x: finalCandidate.x - p.coords[0].x,
-          y: finalCandidate.y - p.coords[0].y
-        };
-        p.step();
-      } else {
-        p.status = 'dead';
-      }
-
-      gameState.players.some(p => p.status == 'alive') ? null : resetGame();
-
-  });
-  timers.schedule(tick, gameSettings.tick);
-}
-//////////////////////
-// GAME SCREENS
-//////////////////////
-
-function displayGameScreen(t: number){
-  // Display users
-  gameState.players.forEach((p, i) => {
-    p.coords.forEach((c,i) => {
-      matrix
-      .fgColor(p.color)
-      .setPixel(c.x,c.y);
-    });
-
-  });
-
-}
-
-function gameLoop(t: number){
-  switch(gameState.activeScreen) {
-    case STATUS.PLAYING_GAME:
-      displayGameScreen(t);
-      break;
-    case STATUS.INTRO:
-      break;
-    default:
-      break;
-  }
-}
-
-
-//////////////////////
-// GAME SCREENS
-//////////////////////
-
-function init (state){
-    matrix = state.matrix;
+  function paint() {
     matrix.clear();
+    for (const player of players) {
+      matrix.fgColor(player.color);
+      for (const { x, y } of player.coords) matrix.setPixel(x, y);
+    }
+    matrix.sync();
+  }
 
-    // Render loop
-    matrix.afterSync((mat, dt, t) => {
-      matrix.clear();
+  function reset() {
+    const midX = Math.floor(width / 2);
+    const midY = Math.floor(height / 2);
+    players = [
+      new LightCycle(0xdf740c, { x: midX - 2, y: midY - 1 }, -1, 0),
+      new LightCycle(0xffe64d, { x: midX - 2, y: midY }, -1, 0),
+      new LightCycle(0xe6ffff, { x: midX, y: midY - 1 }, 1, 0),
+      new LightCycle(0x6fc3df, { x: midX, y: midY }, 1, 0),
+    ];
+    for (const player of players) player.maxLength = trailLength;
+    paint();
+    timers.schedule(tick, 500);
+  }
 
-      gameLoop(t);
+  function tick() {
+    const index = (x: number, y: number) => y * width + x;
+    const occupied = new Set(players.flatMap((player) => player.coords.map(({ x, y }) => index(x, y))));
+    const votes = new Map<number, number>();
 
-      timers.schedule(() => matrix.sync(), 0);
+    const moves = players.filter((player) => player.status === 'alive').map((player) => {
+      const [{ x, y }] = player.coords;
+      const candidates = getAdjacent(x, y, matrix).filter((next) => !occupied.has(index(next.x, next.y)));
+      const straight = candidates.find((next) => next.x === x + player.intent.x && next.y === y + player.intent.y);
+      const next = straight && Math.random() > .01 ? straight : candidates[Math.floor(Math.random() * candidates.length)];
+      if (next) {
+        const cell = index(next.x, next.y);
+        votes.set(cell, (votes.get(cell) ?? 0) + 1);
+      }
+      return { player, x, y, next };
     });
 
-    resetGame();
-    timers.schedule(tick, 1000);
-    matrix.sync();
+    for (const { player, x, y, next } of moves) {
+      if (!next || votes.get(index(next.x, next.y)) !== 1) {
+        player.status = 'dead';
+      } else {
+        player.intent = { x: next.x - x, y: next.y - y };
+        player.step();
+      }
+    }
 
+    paint();
+    if (players.some((player) => player.status === 'alive')) timers.schedule(tick, 50);
+    else timers.schedule(reset, 1100);
+  }
+
+  reset();
 }
 
-function deactivate() {
-  timers.clear();
-}
-
-
-let Lightcycles = { init, deactivate };
-
-export { Lightcycles };
+export const Lightcycles = { init, deactivate: () => timers.clear() };
