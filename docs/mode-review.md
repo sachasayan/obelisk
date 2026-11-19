@@ -1,6 +1,6 @@
 # Obelisk mode review
 
-This review covers the five visuals and six games available in the remote, including their rendering, input, layout, and start/stop behavior.
+This review covers the six visuals and six games available in the remote, including their rendering, input, layout, and start/stop behavior.
 
 ## Visuals
 
@@ -8,8 +8,9 @@ This review covers the five visuals and six games available in the remote, inclu
 | --- | --- | --- |
 | [Billboard](../packages/obelisk-server/modes/billboard.index.ts) | The original fixed streetcar and arrival positions assumed a 128-pixel-wide strip. It now chooses side-by-side, stacked, or alternating content and cancels TTC polling when the mode stops. A failed fetch and a feed with no upcoming service still both show the same placeholder. | Make the minutes the first thing a viewer reads. Keep the last known estimate only within a defined freshness window, and give stale data and no service distinct treatments. Check legibility across a room on a short strip. |
 | [Clock](../packages/obelisk-server/modes/clock.index.ts) | The remote offers three bitmap font families and preset or custom colors. Clock selects a suitable size and uses a shortened time when the full readout cannot fit. | Add a tiny-panel indicator when only hours or minutes fit. |
+| [Lava Lamp](../packages/obelisk-server/modes/lava-lamp.index.ts) | Colored blobs rise, fall, and merge across the panel. The remote adjusts palette, speed, and blob count during playback. | Check color gradients and shadow detail on a calibrated physical panel. |
 | [Pulse](../packages/obelisk-server/modes/pulse.index.ts) | A fixed phase buffer drives the LED sparkle at 25 Hz. The remote controls color and intensity from 0 to 100%. | Compare a coherent pulse wave with the sparkle pattern on the physical panel. |
-| [Space](../packages/obelisk-server/modes/space.index.ts) | Stars stay in place and twinkle at different rates. A shooting star crosses part of the panel every so often. Both effects use the actual panel dimensions. | Tune star density and meteor legibility on compact physical panels. |
+| [Starry Night](../packages/obelisk-server/modes/space.index.ts) | Stars stay in place and twinkle at different rates. A shooting star crosses part of the panel every so often. Both effects use the actual panel dimensions. | Tune star density and meteor legibility on compact physical panels. |
 | [Sunlight](../packages/obelisk-server/modes/sunlight.index.ts) | An animated sunset gradient shifts into indigo and deep blue, then fades to black by local midnight. Daytime and late night are blank, with no frame loop. | Tune the dusk palette and intensity on the installed LEDs. |
 
 ## Games
@@ -27,7 +28,7 @@ This review covers the five visuals and six games available in the remote, inclu
 
 - The server activates one mode at a time. **Turn display off** deactivates it, aborts pending Billboard work, and blanks the panel. Use **OBELISK_START_MODE=off** to leave the display off at startup. Clock still serves as the default for existing setups.
 - Static visuals do not schedule another frame after drawing. Animated effects and games use bounded loops. Simulator frames are delivered only when the display view has subscribers, and a connecting viewer can still read the latest frame.
-- **OBELISK_SIM_LAYOUT** accepts tile columns and rows followed by horizontal chain and vertical parallel counts. The simulator tests cover 128 × 16, 8 × 8, 16 × 8, 32 × 32, and 16 × 48. The compact and stacked cases exercise all eleven remote modes and verify that turning the display off stops frame updates.
+- **OBELISK_SIM_LAYOUT** accepts tile columns and rows followed by horizontal chain and vertical parallel counts. The simulator tests cover 128 × 16, 8 × 8, 16 × 8, 32 × 32, and 16 × 48. The compact and stacked cases exercise all twelve remote modes and verify that turning the display off stops frame updates.
 - The reviewed modes run through both drawing backends, but the automated checks use the software matrix. Confirm GPIO mapping, brightness, frame cadence, legibility, and input latency on a physical Pi installation.
 - The dormant [DripClock](../packages/obelisk-server/modes/drip-clock.index.ts) and [Pac prototype](../packages/obelisk-server/_pac/index.ts) are outside the current mode registry. DripClock retains completed timers and depends on native bindings. Pac assumes a 128-pixel stride and leaves a very long timeout alive. If either is restored, apply the same layout and lifecycle contract first.
 
@@ -53,6 +54,6 @@ Use case: photorealistic-natural. Square photo-real production albedo texture fo
 Generate one square photoreal PBR albedo scan for the upholstery of a modern low-profile lounge couch in a dark media room. Fine tactile heathered charcoal with a muted olive/espresso tint, elegant dense wool-linen cross weave, tiny warm and cool flecks, medium charcoal neutral value so it can be darkened in the renderer. Square full-bleed orthographic textile material sample with approximately seamless edges; weave at realistic small scale. Planar sample no fabric folds, seams, pillows, holes, furniture silhouette, emboss, cast shadow, bright reflections, text, or directional lighting. Even neutral diffuse light; capture subtle credible fibers.
 
 
-### Space poster
+### Starry Night poster
 
 ImageGen prompt. Create a landscape 3:2 macro of a fine RGB LED grid with sparse cyan, indigo, and white stars and one icy blue shooting star. Keep the bottom quarter nearly black for the title overlay, with no typography or spacecraft.

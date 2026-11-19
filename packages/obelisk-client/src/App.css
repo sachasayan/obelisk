@@ -144,6 +144,8 @@
   border-radius: .3rem;
 }
 
+.Visual-palette-preview { height: .5rem; border-radius: .2rem; }
+
 .Visual-field select { min-height: 2.5rem; padding-inline: .55rem; font: inherit; }
 .Visual-swatches { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .3rem; }
 .Visual-swatches button { min-height: 2.25rem; padding: .35rem; cursor: pointer; }

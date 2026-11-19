@@ -117,7 +117,7 @@ test('the simulator renders real modes and reflects live controller input', { ti
   assert.equal((await sunlightFrame).rgb.length, 128 * 16 * 3);
 
   const firstSpace = waitForFrame(viewer, (frame) => frame.mode === 'space' && frame.rgb.some(Boolean));
-  controller.emit('changeMode', 'space');
+  controller.emit('changeMode', 'starry-night');
   const space = await firstSpace;
   const twinkled = await waitForFrame(viewer, (frame) => frame.mode === 'space' && !frame.rgb.equals(space.rgb));
   assert.deepEqual(litPositions(twinkled), litPositions(space));
@@ -153,6 +153,47 @@ test('the simulator renders real modes and reflects live controller input', { ti
   assert.equal((await blank).rgb.some(Boolean), false);
 });
 
+test('Lava Lamp pauses motion and applies color and blob updates while paused', { timeout: 8000 }, async (t) => {
+  const url = await startSimulator(t);
+  const viewer = io(url + DISPLAY_NAMESPACE, { autoConnect: false, transports: ['websocket'] });
+  const remote = io(url, { autoConnect: false, transports: ['websocket'] });
+  t.after(() => { viewer.disconnect(); remote.disconnect(); });
+
+  const initial = waitForFrame(viewer, (frame) => frame.mode === 'clock');
+  const assigned = receive(remote, 'obeliskAssignUser');
+  viewer.connect();
+  remote.connect();
+  await Promise.all([initial, assigned]);
+
+  const first = waitForFrame(viewer, (frame) => frame.mode === 'lava-lamp');
+  remote.emit(UPDATE_VISUAL_SETTINGS, { mode: 'lava-lamp', speed: 0 });
+  remote.emit('changeMode', 'lava-lamp');
+  const magma = await first;
+  assert.ok(magma.rgb.some((value, i) => i % 3 === 0 && value > 200));
+
+  const palette = waitForFrame(viewer, (frame) => frame.mode === 'lava-lamp'
+    && pixel(frame, 0, 0)[2] > pixel(frame, 0, 0)[0]);
+  remote.emit(UPDATE_VISUAL_SETTINGS, { mode: 'lava-lamp', palette: 'lagoon' });
+  const lagoon = await palette;
+  assert.ok(!lagoon.rgb.equals(magma.rgb));
+
+  const noMotion = new Promise<boolean>((resolve) => {
+    const timer = setTimeout(() => { viewer.off(DISPLAY_FRAME, changed); resolve(true); }, 180);
+    function changed() { clearTimeout(timer); resolve(false); }
+    viewer.once(DISPLAY_FRAME, changed);
+  });
+  assert.ok(await noMotion);
+
+  const newBlob = waitForFrame(viewer, (frame) => frame.mode === 'lava-lamp' && !frame.rgb.equals(lagoon.rgb));
+  remote.emit(UPDATE_VISUAL_SETTINGS, { mode: 'lava-lamp', blobs: 8 });
+  await newBlob;
+
+  const moving = waitForFrame(viewer, (frame) => frame.mode === 'lava-lamp' && frame.rgb.some(Boolean));
+  remote.emit(UPDATE_VISUAL_SETTINGS, { mode: 'lava-lamp', speed: 150 });
+  const firstMoving = await moving;
+  await waitForFrame(viewer, (frame) => frame.mode === 'lava-lamp' && !frame.rgb.equals(firstMoving.rgb));
+});
+
 test('the calibration pattern is still available at startup', { timeout: 5000 }, async (t) => {
   const url = await startSimulator(t, { OBELISK_START_MODE: 'test' });
   const viewer = io(url + DISPLAY_NAMESPACE, { autoConnect: false, transports: ['websocket'] });
@@ -183,7 +224,7 @@ test('all remote modes render on small and stacked panels, and off stops frame u
       assert.deepEqual([off.width, off.height, off.tileWidth, off.tileHeight], [width, height, tileWidth, tileHeight]);
       assert.equal(off.rgb.some(Boolean), false);
 
-      for (const mode of ['billboard', 'clock', 'pulse', 'space', 'sunlight', 'lightcycles', 'pong', ...Object.keys(games)]) {
+      for (const mode of ['billboard', 'clock', 'lava-lamp', 'pulse', 'space', 'sunlight', 'lightcycles', 'pong', ...Object.keys(games)]) {
         const painted = waitForFrame(viewer, (frame) => frame.mode === mode && (mode === 'sunlight' || frame.rgb.some(Boolean)));
         controller.emit('changeMode', mode);
         assert.equal((await painted).rgb.length, width * height * 3, mode);

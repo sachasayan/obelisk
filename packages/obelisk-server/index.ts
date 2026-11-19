@@ -186,6 +186,7 @@ function main() {
   const modes = {
     billboard: panelModes?.Billboard,
     clock: panelModes?.Clock,
+    'lava-lamp': panelModes?.LavaLamp,
     lightcycles: panelModes?.Lightcycles,
     pong: panelModes?.Pong,
     pulse: panelModes?.Pulse,

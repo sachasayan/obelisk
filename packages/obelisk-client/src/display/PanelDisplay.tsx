@@ -10,8 +10,8 @@ import ViewInArOutlinedIcon from '@mui/icons-material/ViewInArOutlined';
 import ViewSidebarOutlinedIcon from '@mui/icons-material/ViewSidebarOutlined';
 import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
-import { GAME_INPUT, games, isGameMode } from '../../../../shared/games';
-import { controllerPaths } from '../../../../shared/modes';
+import { GAME_INPUT, isGameMode } from '../../../../shared/games';
+import { controllerPaths, modeLabel } from '../../../../shared/modes';
 import { SIMULATOR_SETTINGS, UPDATE_SIMULATOR_SETTINGS } from '../../../../shared/simulator';
 import type { SimulatorSettings, SimulatorUpdate } from '../../../../shared/simulator';
 import { gameActionForKey } from '../components/game-input';
@@ -278,7 +278,7 @@ export default function PanelDisplay() {
         </div>
         {frame && (
           <div className="panel-metadata">
-            <span className="panel-mode">{frame.mode === 'exit' ? 'Display off' : isGameMode(frame.mode) ? games[frame.mode].title : frame.mode}</span>
+            <span className="panel-mode">{modeLabel(frame.mode)}</span>
             <span>{frame.width} × {frame.height} pixels</span>
             <span>{(frame.width / frame.tileWidth) * (frame.height / frame.tileHeight)} tiles</span>
             <span>{frame.brightness}% brightness</span>

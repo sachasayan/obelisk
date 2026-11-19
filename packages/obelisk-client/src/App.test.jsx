@@ -24,7 +24,9 @@ test('selects Pong after assignment and keeps the connection when navigating hom
   expect(screen.queryByRole('link', { name: /open virtual panel/i })).not.toBeInTheDocument();
   const visuals = screen.getByRole('region', { name: 'Visuals' });
   const games = screen.getByRole('region', { name: 'Games' });
-  expect(within(visuals).getAllByRole('button')).toHaveLength(5);
+  expect(within(visuals).getAllByRole('button')).toHaveLength(6);
+  expect(within(visuals).getByRole('button', { name: 'Starry Night' })).toBeInTheDocument();
+  expect(within(visuals).queryByRole('button', { name: 'Space', exact: true })).not.toBeInTheDocument();
   expect(within(games).getAllByRole('button')).toHaveLength(6);
   expect(within(games).queryByRole('button', { name: 'Munchman' })).not.toBeInTheDocument();
   const pong = within(games).getByRole('button', { name: 'Pong' });
@@ -77,6 +79,26 @@ test('Pulse and Clock open dedicated controls from the mode catalog', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Mint' }));
   expect(send).toHaveBeenCalledWith('visual:updateSettings', { mode: 'clock', color: '#56ebba' });
   fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+});
+
+test('Lava Lamp opens and sends its palette, speed, and blob count', () => {
+  const socket = Object.assign(new EventEmitter(), { connected: true, connect: vi.fn(), disconnect: vi.fn() });
+  vi.mocked(io).mockReturnValue(socket);
+  const send = vi.spyOn(socket, 'emit');
+  render(<App />);
+  act(() => socket.emit('obeliskAssignUser', 0));
+  fireEvent.click(screen.getByRole('button', { name: 'Lava Lamp' }));
+  expect(send).toHaveBeenCalledWith('changeMode', 'lava-lamp');
+  act(() => socket.emit('obeliskInitController', 'lava-lamp'));
+  expect(window.location.pathname).toBe('/controller/lava-lamp');
+
+  fireEvent.change(screen.getByRole('combobox', { name: 'Palette' }), { target: { value: 'lagoon' } });
+  expect(send).toHaveBeenCalledWith('visual:updateSettings', { mode: 'lava-lamp', palette: 'lagoon' });
+  fireEvent.change(screen.getByRole('slider', { name: 'Motion speed' }), { target: { value: '0' } });
+  expect(screen.getByRole('slider', { name: 'Motion speed' })).toHaveAttribute('aria-valuetext', 'Paused');
+  expect(send).toHaveBeenCalledWith('visual:updateSettings', { mode: 'lava-lamp', speed: 0 });
+  fireEvent.change(screen.getByRole('slider', { name: 'Blob count' }), { target: { value: '7' } });
+  expect(send).toHaveBeenCalledWith('visual:updateSettings', { mode: 'lava-lamp', blobs: 7 });
 });
 
 test('Stack Duel joins its game and sends keyboard and pad input', () => {

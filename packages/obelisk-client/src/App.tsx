@@ -22,6 +22,7 @@ function ControllerApp() {
             <Route key={mode} path={controllerPaths[mode]} element={<GameController key={mode} mode={mode} />} />
           ))}
           <Route path={controllerPaths.pulse} element={<VisualController mode="pulse" />} />
+          <Route path={controllerPaths['lava-lamp']} element={<VisualController mode="lava-lamp" />} />
           <Route path={controllerPaths.clock} element={<VisualController mode="clock" />} />
         </Routes>
       </main>

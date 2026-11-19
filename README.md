@@ -100,7 +100,8 @@ You can also change virtual brightness and apply custom tile geometry or a prese
 Applying geometry restarts the current mode. Settings are shared by simulator viewers for the current server run.
 
 **Pulse** has its own color and intensity controls, and **Clock** offers three bitmap font families and
-a color picker. Their settings are shared across connected remotes for the current server run.
+a color picker. **Lava Lamp** lets you change the palette, adjust or pause motion, and set the
+blob count. Settings are shared across connected remotes for the current server run.
 **Sunlight** stays dark by day, animates from sunset colors into midnight blue, then turns off at midnight.
 It uses Toronto by default. Set `OBELISK_SUNLIGHT_LATITUDE`, `OBELISK_SUNLIGHT_LONGITUDE`, and
 `OBELISK_SUNLIGHT_TIME_ZONE` (an IANA time zone such as `America/Vancouver`) to match your installation.
@@ -123,7 +124,7 @@ OBELISK_SIM_LAYOUT=16x16:2x2 OBELISK_START_MODE=off npm run simulate
 ```
 
 This starts with the display off and previews a 32 × 32 pixel, four-tile installation.
-Omit `OBELISK_START_MODE` to start on Clock, or set it to a mode name such as `space`.
+Omit `OBELISK_START_MODE` to start on Clock, or set it to a mode name such as `starry-night` or `lava-lamp`. The existing `space` value still starts Starry Night.
 Actual brightness, panel scan timing, and GPIO behavior need verification on the physical installation.
 See the [mode review](docs/mode-review.md) for design and implementation follow-ups.
 

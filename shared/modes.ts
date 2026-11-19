@@ -6,8 +6,9 @@ export const modeGroups = [
     modes: [
       ['billboard', 'Billboard'],
       ['clock', 'Clock'],
+      ['lava-lamp', 'Lava Lamp'],
       ['pulse', 'Pulse'],
-      ['space', 'Space'],
+      ['space', 'Starry Night'],
       ['sunlight', 'Sunlight'],
     ],
   },
@@ -31,6 +32,7 @@ export const controllerPaths = {
   'echo-keys': '/controller/echo-keys',
   pulse: '/controller/pulse',
   clock: '/controller/clock',
+  'lava-lamp': '/controller/lava-lamp',
 } as const;
 
 export function controllerPath(mode: unknown) {
@@ -39,11 +41,18 @@ export function controllerPath(mode: unknown) {
   }
 }
 
-const modeNames: readonly ModeName[] = [
-  ...modeGroups.flatMap(({ modes }) => [...modes].map(([name]) => name)),
-  'exit',
-];
+const modeLabels = new Map<ModeName, string>([
+  ...modeGroups.flatMap(({ modes }) => [...modes]),
+  ['exit', 'Display off'],
+]);
+
+export function modeLabel(value: string) {
+  return modeLabels.get(value as ModeName) ?? (value === 'test' ? 'Calibration' : value);
+}
 
 export function findMode(value: string) {
-  return modeNames.find((name) => name === value.toLowerCase());
+  const key = value.toLowerCase();
+  if (key === 'starry-night' || key === 'starry night') return 'space';
+  const mode = key as ModeName;
+  return modeLabels.has(mode) ? mode : undefined;
 }
