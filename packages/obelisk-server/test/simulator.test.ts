@@ -166,10 +166,13 @@ test('Lava Lamp pauses motion and applies color and blob updates while paused', 
   await Promise.all([initial, assigned]);
 
   const first = waitForFrame(viewer, (frame) => frame.mode === 'lava-lamp');
-  remote.emit(UPDATE_VISUAL_SETTINGS, { mode: 'lava-lamp', speed: 0 });
+  remote.emit(UPDATE_VISUAL_SETTINGS, { mode: 'lava-lamp', speed: 0, blobs: 2 });
   remote.emit('changeMode', 'lava-lamp');
   const magma = await first;
   assert.ok(magma.rgb.some((value, i) => i % 3 === 0 && value > 200));
+  // The two starting droplets are suspended above the floor.
+  const bottom = magma.rgb.subarray((magma.height - 1) * magma.width * 3);
+  assert.ok(bottom.every((value, i) => i % 3 !== 0 || value < 64), 'the floor glows without wax nearby');
 
   const palette = waitForFrame(viewer, (frame) => frame.mode === 'lava-lamp'
     && pixel(frame, 0, 0)[2] > pixel(frame, 0, 0)[0]);
